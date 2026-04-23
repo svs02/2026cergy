@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import passport from 'passport'
 import { env } from '../env'
+import { User } from '../models/User'
 
 export const authRouter = Router()
 
@@ -43,3 +44,31 @@ authRouter.get('/me', (req, res) => {
   }
   res.json(req.user)
 })
+
+// 테스트 전용 로그인 — NODE_ENV=test 일 때만 활성화
+if (process.env.NODE_ENV === 'test') {
+  authRouter.post('/test-login', async (req, res) => {
+    const { role } = req.body as { role?: string }
+    const userRole = role === 'ADMIN' ? 'ADMIN' : 'MEMBER'
+
+    const testUser = await User.findOneAndUpdate(
+      { provider: 'google', providerId: 'test-user-id' },
+      {
+        provider: 'google',
+        providerId: 'test-user-id',
+        name: '테스트 사용자',
+        email: 'test@example.com',
+        role: userRole,
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    )
+
+    req.login(testUser, (error: unknown) => {
+      if (error) {
+        res.status(500).json({ message: '테스트 로그인 실패' })
+        return
+      }
+      res.json(testUser)
+    })
+  })
+}
