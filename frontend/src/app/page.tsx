@@ -91,7 +91,7 @@ export default async function HomePage() {
               letterSpacing: 1,
             }}
           >
-            Cergy
+            Cergy Music Academy
           </div>
           <HeroMenuButton />
         </div>

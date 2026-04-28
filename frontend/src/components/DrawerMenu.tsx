@@ -92,7 +92,7 @@ export function DrawerMenu() {
               color: TOKENS.bg,
             }}
           >
-            Cergy
+            Cergy Music Academy
           </div>
           <div onClick={close} style={{ color: TOKENS.bg, cursor: 'pointer', padding: 4 }}>
             <CloseIcon size={22} color={TOKENS.bg} />

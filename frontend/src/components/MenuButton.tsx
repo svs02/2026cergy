@@ -39,6 +39,7 @@ export function MenuButton({ color = 'currentColor', size = 22, padding = 4 }: M
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerLeave}
       onPointerCancel={onPointerCancel}
+      onContextMenu={(event) => event.preventDefault()}
       style={{
         background: 'transparent',
         border: 'none',
@@ -49,7 +50,9 @@ export function MenuButton({ color = 'currentColor', size = 22, padding = 4 }: M
         alignItems: 'center',
         justifyContent: 'center',
         WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
         userSelect: 'none',
+        touchAction: 'manipulation',
       }}
     >
       <MenuIcon size={size} color={color} />
