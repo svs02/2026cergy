@@ -9,13 +9,24 @@ function requireEnv(key: string): string {
   return value
 }
 
+function readAdminPassword(): string {
+  const value = process.env.ADMIN_PASSWORD
+  if (value) {
+    return value
+  }
+  if (process.env.NODE_ENV === 'test') {
+    return 'test-admin'
+  }
+  throw new Error('ADMIN_PASSWORD 환경변수가 설정되지 않았습니다')
+}
+
 export const env = {
   PORT: requireEnv('PORT'),
   CLIENT_URL: requireEnv('CLIENT_URL'),
   SESSION_SECRET: requireEnv('SESSION_SECRET'),
   MONGODB_URI: requireEnv('MONGODB_URI'),
-  GOOGLE_CLIENT_ID: requireEnv('GOOGLE_CLIENT_ID'),
-  GOOGLE_CLIENT_SECRET: requireEnv('GOOGLE_CLIENT_SECRET'),
-  NAVER_CLIENT_ID: requireEnv('NAVER_CLIENT_ID'),
-  NAVER_CLIENT_SECRET: requireEnv('NAVER_CLIENT_SECRET'),
+  ADMIN_PASSWORD: readAdminPassword(),
+  RESEND_API_KEY: process.env.RESEND_API_KEY ?? '',
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL ?? '',
+  ADMIN_NOTIFICATION_FROM: process.env.ADMIN_NOTIFICATION_FROM ?? 'onboarding@resend.dev',
 }

@@ -32,3 +32,7 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# 백엔드 업로드 디렉터리 (.gitkeep만 추적)
+backend/uploads/*
+!backend/uploads/.gitkeep

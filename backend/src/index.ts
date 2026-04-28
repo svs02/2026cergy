@@ -1,9 +1,11 @@
 import { env } from './env'
 import app from './app'
 import { connectDB } from './lib/db'
+import { migrateGallerySortOrder } from './lib/galleryMigration'
 
 async function bootstrap() {
   await connectDB()
+  await migrateGallerySortOrder()
   app.listen(Number(env.PORT), () => {
     console.log(`서버 실행 중: http://localhost:${env.PORT}`)
   })

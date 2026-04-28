@@ -9,27 +9,25 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "dotenv": "^16.5.0",
-    "express": "^4.21.2",
-    "mongoose": "^8.13.2",
-    "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0",
-    "passport-naver-v2": "^2.0.8",
-    "express-session": "^1.18.1",
     "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
-    "zod": "^3.24.0",
-    "dayjs": "^1.11.13"
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "mongoose": "^8.13.2",
+    "multer": "^1.4.5-lts.1",
+    "resend": "^6.12.2",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@types/express": "^5",
-    "@types/node": "^22",
-    "@types/passport": "^1.0.17",
-    "@types/passport-google-oauth20": "^2.0.16",
-    "@types/express-session": "^1.18.1",
     "@types/cors": "^2.8.17",
-    "typescript": "^5",
+    "@types/express": "^5",
+    "@types/express-session": "^1.18.1",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22",
+    "eslint": "^9",
     "tsx": "^4.19.2",
-    "eslint": "^9"
+    "typescript": "^5"
   }
 }

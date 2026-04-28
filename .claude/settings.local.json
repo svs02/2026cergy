@@ -11,7 +11,18 @@
       "Bash(wait)",
       "Bash(node *)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('types:', d.get\\('types', d.get\\('typings', 'none'\\)\\)\\); print\\('main:', d.get\\('main',''\\)\\)\")",
-      "Bash(pnpm exec *)"
+      "Bash(pnpm exec *)",
+      "WebFetch(domain:claude.ai)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Read(//private/tmp/**)",
+      "Bash(cp /Users/luke/.claude/projects/-Users-luke-Desktop-PP-2026cergy/f4d3cd2c-bd4f-49f9-92dd-d269e5995172/tool-results/webfetch-1777327756990-9yt7kt.bin ./design.bin)",
+      "Bash(mkdir -p /tmp/design-extract)",
+      "Bash(gunzip -c /tmp/design.bin)",
+      "Bash(tar -xf design.tar)",
+      "Read(//Users/luke/.nvm/versions/node/**)",
+      "Read(//Users/luke/Library/pnpm/**)",
+      "Read(//Users/luke/**)",
+      "Bash(~/.nvm/versions/node/v20.20.2/bin/node --version)"
     ]
   }
 }

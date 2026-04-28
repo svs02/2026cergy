@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.vercel-storage.com',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '4000',
+      },
     ],
   },
 }
