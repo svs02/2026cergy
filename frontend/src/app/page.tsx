@@ -123,7 +123,7 @@ export default async function HomePage() {
             zIndex: 2,
           }}
         >
-          <Eyebrow color={TOKENS.sun}>SINCE 2014 · VIOLIN ATELIER</Eyebrow>
+          <Eyebrow color={TOKENS.sun}>SINCE 2020 · VIOLIN ATELIER</Eyebrow>
           <Display size={40} color="#fff" style={{ marginTop: 14, fontWeight: 500 }}>
             오늘, 한 음을
             <br />
@@ -216,8 +216,14 @@ export default async function HomePage() {
       </div>
 
       {/* PHOTO BREAK */}
-      <div style={{ position: 'relative' }}>
-        <Photo label="레슨 풍경 · 손과 활" height={300} tone="wood" />
+      <div style={{ position: 'relative', height: 300 }}>
+        <Image
+          src="/image/내부.jpg"
+          alt="레슨 풍경 · 손과 활"
+          fill
+          sizes="100vw"
+          style={{ objectFit: 'cover' }}
+        />
         <div
           style={{
             position: 'absolute',
@@ -575,7 +581,7 @@ export default async function HomePage() {
             marginTop: 4,
           }}
         >
-          VIOLIN · SINCE 2014
+          VIOLIN · SINCE 2020
         </div>
         <div
           style={{

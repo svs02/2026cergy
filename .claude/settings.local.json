@@ -23,7 +23,11 @@
       "Read(//Users/luke/Library/pnpm/**)",
       "Read(//Users/luke/**)",
       "Bash(~/.nvm/versions/node/v20.20.2/bin/node --version)",
-      "Bash(ipconfig getifaddr:*)"
+      "Bash(ipconfig getifaddr:*)",
+      "Read(//Users/luke/Desktop/PP/2026cergy/$HOME/.nvm/**)",
+      "Bash(echo \"NVM_DIR=$NVM_DIR\")",
+      "Bash(. \"$HOME/.nvm/nvm.sh\")",
+      "Bash(nvm ls:*)"
     ]
   }
 }
