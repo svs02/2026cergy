@@ -7,6 +7,12 @@ const TINY_PNG = Buffer.from(
   'base64'
 )
 
+// Minimal valid MP4 (ftyp + mdat boxes)
+const TINY_MP4 = Buffer.from(
+  'AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAAhtZGF0',
+  'base64',
+)
+
 test.beforeEach(async ({ request }) => {
   await request.post('/api/test/reset')
 })
@@ -161,4 +167,64 @@ test('관리자는 reorder로 순서를 변경할 수 있다', async ({ request 
   const listResponse = await request.get('/api/gallery')
   const list = await listResponse.json()
   expect(list.items.map((item: { caption: string }) => item.caption)).toEqual(['A', 'B', 'C'])
+})
+
+test('관리자 비디오 업로드 시 201과 mediaType video를 반환한다', async ({ request }) => {
+  await loginAdmin(request)
+
+  const response = await request.post('/api/gallery', {
+    multipart: {
+      category: '공간',
+      caption: '레슨 영상',
+      image: { name: 'tiny.mp4', mimeType: 'video/mp4', buffer: TINY_MP4 },
+    },
+  })
+  expect(response.status()).toBe(201)
+  const body = await response.json()
+  expect(body.imageUrl).toMatch(/^\/uploads\//)
+  expect(body.mediaType).toBe('video')
+  expect(body.caption).toBe('레슨 영상')
+})
+
+test('비디오 DELETE 후 목록에서 사라진다', async ({ request }) => {
+  await loginAdmin(request)
+
+  const createResponse = await request.post('/api/gallery', {
+    multipart: {
+      category: '발표회',
+      image: { name: 'v.mp4', mimeType: 'video/mp4', buffer: TINY_MP4 },
+    },
+  })
+  const created = await createResponse.json()
+
+  const deleteResponse = await request.delete(`/api/gallery/${created._id}`)
+  expect(deleteResponse.status()).toBe(200)
+
+  const listResponse = await request.get('/api/gallery')
+  const list = await listResponse.json()
+  expect(list.items.length).toBe(0)
+})
+
+test('이미지와 비디오가 같은 목록에 표시된다', async ({ request }) => {
+  await loginAdmin(request)
+
+  await request.post('/api/gallery', {
+    multipart: {
+      category: '공간',
+      image: { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG },
+    },
+  })
+  await request.post('/api/gallery', {
+    multipart: {
+      category: '공간',
+      image: { name: 'clip.mp4', mimeType: 'video/mp4', buffer: TINY_MP4 },
+    },
+  })
+
+  const listResponse = await request.get('/api/gallery')
+  const list = await listResponse.json()
+  expect(list.items.length).toBe(2)
+
+  const types = list.items.map((item: { mediaType: string }) => item.mediaType).sort()
+  expect(types).toEqual(['image', 'video'])
 })

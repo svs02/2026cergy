@@ -4,7 +4,7 @@ import { Router } from 'express'
 import { z } from 'zod/v4'
 import { Gallery, GalleryCategory } from '../models/Gallery'
 import { requireAdmin } from '../middleware/auth'
-import { upload, UPLOAD_DIR } from '../lib/multer'
+import { galleryUpload, mediaTypeFromMime, UPLOAD_DIR } from '../lib/multer'
 
 export const galleryRouter = Router()
 
@@ -45,36 +45,53 @@ galleryRouter.get('/', async (req, res, next) => {
   }
 })
 
-galleryRouter.post('/', requireAdmin, upload.single('image'), async (req, res, next) => {
-  try {
-    if (!req.file) {
-      res.status(400).json({ error: '이미지 파일이 필요합니다' })
-      return
+galleryRouter.post(
+  '/',
+  requireAdmin,
+  galleryUpload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'thumbnail', maxCount: 1 },
+  ]),
+  async (req, res, next) => {
+    try {
+      const files = req.files as { [field: string]: Express.Multer.File[] } | undefined
+      const imageFile = files?.image?.[0]
+      const thumbnailFile = files?.thumbnail?.[0]
+
+      if (!imageFile) {
+        res.status(400).json({ error: '파일이 필요합니다' })
+        return
+      }
+
+      const parsed = createGallerySchema.safeParse(req.body)
+      if (!parsed.success) {
+        await fs.unlink(imageFile.path).catch(() => {})
+        if (thumbnailFile) {
+          await fs.unlink(thumbnailFile.path).catch(() => {})
+        }
+        res.status(400).json({ error: '입력값이 올바르지 않습니다', details: parsed.error.issues })
+        return
+      }
+
+      const top = await Gallery.findOne().sort({ sortOrder: 1 }).select({ sortOrder: 1 }).lean()
+      const nextSortOrder = top ? top.sortOrder - 1 : 0
+
+      const gallery = await Gallery.create({
+        imageUrl: `/uploads/${imageFile.filename}`,
+        mediaType: mediaTypeFromMime(imageFile.mimetype),
+        thumbnailUrl: thumbnailFile ? `/uploads/${thumbnailFile.filename}` : undefined,
+        caption: parsed.data.caption ?? '',
+        category: parsed.data.category as GalleryCategory,
+        featured: parsed.data.featured ?? false,
+        sortOrder: nextSortOrder,
+      })
+
+      res.status(201).json(gallery)
+    } catch (error) {
+      next(error)
     }
-
-    const parsed = createGallerySchema.safeParse(req.body)
-    if (!parsed.success) {
-      await fs.unlink(req.file.path).catch(() => {})
-      res.status(400).json({ error: '입력값이 올바르지 않습니다', details: parsed.error.issues })
-      return
-    }
-
-    const top = await Gallery.findOne().sort({ sortOrder: 1 }).select({ sortOrder: 1 }).lean()
-    const nextSortOrder = top ? top.sortOrder - 1 : 0
-
-    const gallery = await Gallery.create({
-      imageUrl: `/uploads/${req.file.filename}`,
-      caption: parsed.data.caption ?? '',
-      category: parsed.data.category as GalleryCategory,
-      featured: parsed.data.featured ?? false,
-      sortOrder: nextSortOrder,
-    })
-
-    res.status(201).json(gallery)
-  } catch (error) {
-    next(error)
-  }
-})
+  },
+)
 
 galleryRouter.patch('/reorder', requireAdmin, async (req, res, next) => {
   try {
@@ -106,8 +123,12 @@ galleryRouter.delete('/:id', requireAdmin, async (req, res, next) => {
     const gallery = await Gallery.findById(req.params.id).orFail()
 
     const fileName = path.basename(gallery.imageUrl)
-    const filePath = path.join(UPLOAD_DIR, fileName)
-    await fs.unlink(filePath).catch(() => {})
+    await fs.unlink(path.join(UPLOAD_DIR, fileName)).catch(() => {})
+
+    if (gallery.thumbnailUrl) {
+      const thumbName = path.basename(gallery.thumbnailUrl)
+      await fs.unlink(path.join(UPLOAD_DIR, thumbName)).catch(() => {})
+    }
 
     await Gallery.findByIdAndDelete(req.params.id)
     res.json({ ok: true })

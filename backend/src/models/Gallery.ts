@@ -9,8 +9,17 @@ export const GalleryCategory = {
 
 export type GalleryCategory = (typeof GalleryCategory)[keyof typeof GalleryCategory]
 
+export const MediaType = {
+  IMAGE: 'image',
+  VIDEO: 'video',
+} as const
+
+export type MediaType = (typeof MediaType)[keyof typeof MediaType]
+
 export interface IGallery {
   imageUrl: string
+  mediaType: MediaType
+  thumbnailUrl?: string
   caption: string
   category: GalleryCategory
   featured: boolean
@@ -20,6 +29,13 @@ export interface IGallery {
 const gallerySchema = new Schema<IGallery>(
   {
     imageUrl: { type: String, required: true },
+    mediaType: {
+      type: String,
+      required: true,
+      default: MediaType.IMAGE,
+      enum: Object.values(MediaType),
+    },
+    thumbnailUrl: { type: String },
     caption: { type: String, default: '' },
     category: {
       type: String,

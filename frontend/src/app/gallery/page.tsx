@@ -33,15 +33,16 @@ import {
   GalleryCategory,
   deleteGalleryImage,
   getImageUrl,
+  isVideo,
   listGallery,
   reorderGallery,
-  uploadGalleryImage,
+  uploadGalleryMedia,
   type GalleryItem,
 } from '@/lib/api'
 import { Display } from '@/components/Display'
 import { PageHeader } from '@/components/PageHeader'
 import { Photo } from '@/components/Photo'
-import { CloseIcon, TrashIcon } from '@/components/Icons'
+import { CloseIcon, PlayIcon, TrashIcon } from '@/components/Icons'
 import { useAdmin } from '@/components/AdminContext'
 
 const CATEGORIES = [
@@ -58,6 +59,85 @@ const UPLOAD_CATEGORIES = [
   GalleryCategory.RECITAL,
   GalleryCategory.INSTRUMENT,
 ] as const
+
+const VIDEO_ACCEPT = 'image/*,video/mp4,video/webm,video/quicktime'
+
+function generateVideoThumbnail(file: File): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    video.muted = true
+    video.playsInline = true
+
+    video.onloadeddata = () => {
+      video.currentTime = Math.min(1, video.duration / 4)
+    }
+
+    video.onseeked = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        URL.revokeObjectURL(video.src)
+        resolve(null)
+        return
+      }
+      ctx.drawImage(video, 0, 0)
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(video.src)
+          resolve(blob)
+        },
+        'image/jpeg',
+        0.8,
+      )
+    }
+
+    video.onerror = () => {
+      URL.revokeObjectURL(video.src)
+      resolve(null)
+    }
+
+    video.src = URL.createObjectURL(file)
+  })
+}
+
+const playOverlayStyle: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  pointerEvents: 'none',
+}
+
+const playCircleStyle: React.CSSProperties = {
+  width: 48,
+  height: 48,
+  borderRadius: '50%',
+  background: 'rgba(0,0,0,.5)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}
+
+function VideoOverlay() {
+  return (
+    <div style={playOverlayStyle}>
+      <div style={playCircleStyle}>
+        <PlayIcon size={22} color="#fff" />
+      </div>
+    </div>
+  )
+}
+
+function mediaThumbnailSrc(item: GalleryItem): string | undefined {
+  if (isVideo(item)) {
+    return item.thumbnailUrl ?? undefined
+  }
+  return item.imageUrl
+}
 
 export default function GalleryPage() {
   const { isAdmin } = useAdmin()
@@ -91,12 +171,12 @@ export default function GalleryPage() {
   }, [isAdmin, sortMode])
 
   const handleDelete = async (item: GalleryItem) => {
-    if (!window.confirm('이 사진을 삭제할까요?')) {
+    if (!window.confirm('이 항목을 삭제할까요?')) {
       return
     }
     try {
       await deleteGalleryImage(item._id)
-      notifications.show({ title: '완료', message: '사진을 삭제했습니다.', color: 'green' })
+      notifications.show({ title: '완료', message: '삭제했습니다.', color: 'green' })
       void refresh(category)
     } catch (error) {
       notifications.show({
@@ -147,7 +227,8 @@ export default function GalleryPage() {
         }
         rows.push(
           <div key={`b-${index}`} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setFocus(item)}>
-            <Photo label={item.caption ?? ''} height={280} tone="green" src={item.imageUrl} alt={item.caption ?? ''} />
+            <Photo label={item.caption ?? ''} height={280} tone="green" src={mediaThumbnailSrc(item)} alt={item.caption ?? ''} />
+            {isVideo(item) && <VideoOverlay />}
             {isAdmin && (
               <button
                 onClick={(event) => {
@@ -205,7 +286,7 @@ export default function GalleryPage() {
                 onClick={() => setUploadOpen(true)}
                 style={primaryActionButtonStyle}
               >
-                <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> 이미지 업로드
+                <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> 미디어 업로드
               </button>
             </>
           )}
@@ -260,7 +341,7 @@ export default function GalleryPage() {
         {loading ? (
           <div style={emptyStateStyle}>불러오는 중...</div>
         ) : items.length === 0 ? (
-          <div style={emptyStateStyle}>아직 등록된 사진이 없습니다.</div>
+          <div style={emptyStateStyle}>아직 등록된 미디어가 없습니다.</div>
         ) : sortMode ? (
           <SortList
             items={items}
@@ -290,8 +371,24 @@ export default function GalleryPage() {
           <div style={{ position: 'absolute', top: 18, right: 18, color: '#fff', cursor: 'pointer' }}>
             <CloseIcon size={24} color="#fff" />
           </div>
-          <div style={{ width: '100%', maxWidth: 600, aspectRatio: '1/1', position: 'relative' }}>
-            {focus.imageUrl ? (
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 600,
+              position: 'relative',
+              ...(isVideo(focus) ? {} : { aspectRatio: '1/1' }),
+            }}
+          >
+            {isVideo(focus) ? (
+              // eslint-disable-next-line jsx-a11y/media-has-caption
+              <video
+                src={getImageUrl(focus.imageUrl)}
+                controls
+                playsInline
+                style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+                onClick={(event) => event.stopPropagation()}
+              />
+            ) : focus.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={getImageUrl(focus.imageUrl)}
@@ -399,7 +496,8 @@ function PairRow({ items, onTap, isAdmin, onDelete }: PairRowProps) {
           style={{ aspectRatio: '1/1', cursor: 'pointer', position: 'relative' }}
           onClick={() => onTap(item)}
         >
-          <Photo label={item.caption ?? ''} fillHeight tone="green" src={item.imageUrl} alt={item.caption ?? ''} />
+          <Photo label={item.caption ?? ''} fillHeight tone="green" src={mediaThumbnailSrc(item)} alt={item.caption ?? ''} />
+          {isVideo(item) && <VideoOverlay />}
           {isAdmin && (
             <button
               onClick={(event) => {
@@ -510,7 +608,14 @@ function SortableRow({ item, index, isFirst, isLast, onMove }: SortableRowProps)
         ⋮⋮
       </div>
       <div style={{ width: 84, height: 84, position: 'relative', overflow: 'hidden' }}>
-        <Photo label={item.caption ?? ''} fillHeight tone="green" src={item.imageUrl} alt={item.caption ?? ''} />
+        <Photo label={item.caption ?? ''} fillHeight tone="green" src={mediaThumbnailSrc(item)} alt={item.caption ?? ''} />
+        {isVideo(item) && (
+          <div style={playOverlayStyle}>
+            <div style={{ ...playCircleStyle, width: 28, height: 28 }}>
+              <PlayIcon size={12} color="#fff" />
+            </div>
+          </div>
+        )}
       </div>
       <div style={{ minWidth: 0 }}>
         <div
@@ -598,17 +703,26 @@ function UploadModal({ open, onClose, onUploaded }: UploadModalProps) {
 
   const handleSubmit = async () => {
     if (!file) {
-      notifications.show({ title: '파일이 필요합니다', message: '이미지를 선택해 주세요.', color: 'red' })
+      notifications.show({ title: '파일이 필요합니다', message: '파일을 선택해 주세요.', color: 'red' })
       return
     }
     setUploading(true)
     try {
-      await uploadGalleryImage(file, {
-        category,
-        caption: caption.length > 0 ? caption : undefined,
-        featured,
-      })
-      notifications.show({ title: '완료', message: '사진을 업로드했습니다.', color: 'green' })
+      let thumbnail: Blob | undefined
+      if (file.type.startsWith('video/')) {
+        const generated = await generateVideoThumbnail(file)
+        thumbnail = generated ?? undefined
+      }
+      await uploadGalleryMedia(
+        file,
+        {
+          category,
+          caption: caption.length > 0 ? caption : undefined,
+          featured,
+        },
+        thumbnail,
+      )
+      notifications.show({ title: '완료', message: '업로드했습니다.', color: 'green' })
       reset()
       onUploaded()
     } catch (error) {
@@ -629,13 +743,13 @@ function UploadModal({ open, onClose, onUploaded }: UploadModalProps) {
         reset()
         onClose()
       }}
-      title="사진 업로드"
+      title="미디어 업로드"
     >
       <Stack>
-        <FileButton onChange={setFile} accept="image/*">
+        <FileButton onChange={setFile} accept={VIDEO_ACCEPT}>
           {(props) => (
             <Button {...props} variant="outline">
-              {file ? file.name : '이미지 선택'}
+              {file ? file.name : '이미지 / 동영상 선택'}
             </Button>
           )}
         </FileButton>

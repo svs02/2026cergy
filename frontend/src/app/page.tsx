@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { TOKENS } from '@/lib/tokens'
 import {
+  isVideo,
   listGallery,
   listNotices,
   type GalleryItem,
@@ -11,7 +12,7 @@ import { Eyebrow } from '@/components/Eyebrow'
 import { GoldRule } from '@/components/GoldRule'
 import { SectionHead } from '@/components/SectionHead'
 import { Photo } from '@/components/Photo'
-import { ArrowIcon, MapIcon, PhoneIcon } from '@/components/Icons'
+import { ArrowIcon, MapIcon, PhoneIcon, PlayIcon } from '@/components/Icons'
 import { HeroMenuButton } from '@/components/HeroMenuButton'
 
 export const dynamic = 'force-dynamic'
@@ -274,7 +275,41 @@ export default async function HomePage() {
           >
             {gallery.map((item) => (
               <div key={item._id} style={{ flexShrink: 0, width: 220 }}>
-                <Photo label={item.caption ?? ''} height={240} tone="green" src={item.imageUrl} alt={item.caption ?? ''} />
+                <div style={{ position: 'relative' }}>
+                  <Photo
+                    label={item.caption ?? ''}
+                    height={240}
+                    tone="green"
+                    src={isVideo(item) ? (item.thumbnailUrl ?? undefined) : item.imageUrl}
+                    alt={item.caption ?? ''}
+                  />
+                  {isVideo(item) && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: '50%',
+                          background: 'rgba(0,0,0,.5)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <PlayIcon size={20} color="#fff" />
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div
                   style={{
                     fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
@@ -512,7 +547,7 @@ export default async function HomePage() {
             color: '#fff',
           }}
         >
-          Cergy
+          Cergy Music Academy
         </div>
         <div
           style={{
@@ -533,7 +568,7 @@ export default async function HomePage() {
             marginTop: 24,
           }}
         >
-          © 2026 Cergy Violin Atelier
+          © 2026 Cergy Music Academy
           <br />
           서울 마포구 와우산로 23-7 · 02-1234-5678
           <br />

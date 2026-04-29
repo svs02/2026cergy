@@ -9,7 +9,9 @@ if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 }
 
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+const ALLOWED_VIDEO_MIME = new Set(['video/mp4', 'video/webm', 'video/quicktime'])
+const ALLOWED_MEDIA_MIME = new Set([...ALLOWED_IMAGE_MIME, ...ALLOWED_VIDEO_MIME])
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -27,10 +29,26 @@ export const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    if (!ALLOWED_MIME.has(file.mimetype)) {
+    if (!ALLOWED_IMAGE_MIME.has(file.mimetype)) {
       cb(new Error('허용되지 않는 이미지 형식입니다'))
       return
     }
     cb(null, true)
   },
 })
+
+export const galleryUpload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 },
+  fileFilter: (_req, file, callback) => {
+    if (!ALLOWED_MEDIA_MIME.has(file.mimetype)) {
+      callback(new Error('허용되지 않는 파일 형식입니다'))
+      return
+    }
+    callback(null, true)
+  },
+})
+
+export function mediaTypeFromMime(mime: string): 'image' | 'video' {
+  return ALLOWED_VIDEO_MIME.has(mime) ? 'video' : 'image'
+}

@@ -18,6 +18,12 @@ export const GalleryCategory = {
 } as const
 export type GalleryCategory = (typeof GalleryCategory)[keyof typeof GalleryCategory]
 
+export const MediaType = {
+  IMAGE: 'image',
+  VIDEO: 'video',
+} as const
+export type MediaType = (typeof MediaType)[keyof typeof MediaType]
+
 export interface NoticeItem {
   _id: string
   title: string
@@ -39,11 +45,17 @@ export interface NoticeListResponse {
 export interface GalleryItem {
   _id: string
   imageUrl: string
+  mediaType?: MediaType
+  thumbnailUrl?: string
   category: GalleryCategory
   caption?: string
   featured?: boolean
   sortOrder: number
   createdAt: string
+}
+
+export function isVideo(item: GalleryItem): boolean {
+  return item.mediaType === 'video'
 }
 
 export interface GalleryListResponse {
@@ -156,7 +168,11 @@ export interface GalleryUploadMeta {
   featured?: boolean
 }
 
-export async function uploadGalleryImage(file: File, meta: GalleryUploadMeta): Promise<GalleryItem> {
+export async function uploadGalleryMedia(
+  file: File,
+  meta: GalleryUploadMeta,
+  thumbnail?: Blob,
+): Promise<GalleryItem> {
   const form = new FormData()
   form.append('image', file)
   form.append('category', meta.category)
@@ -166,11 +182,16 @@ export async function uploadGalleryImage(file: File, meta: GalleryUploadMeta): P
   if (meta.featured) {
     form.append('featured', 'true')
   }
+  if (thumbnail) {
+    form.append('thumbnail', thumbnail, 'thumb.jpg')
+  }
   return apiFetch<GalleryItem>('/api/gallery', {
     method: 'POST',
     body: form,
   })
 }
+
+export const uploadGalleryImage = uploadGalleryMedia
 
 export async function deleteGalleryImage(id: string): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>(`/api/gallery/${id}`, {
