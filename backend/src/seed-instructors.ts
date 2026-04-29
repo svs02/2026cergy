@@ -1,16 +1,8 @@
-import type { PhotoTone } from './tokens'
+import { connect, disconnect } from 'mongoose'
+import { env } from './env'
+import { Instructor } from './models/Instructor'
 
-export interface Instructor {
-  name: string
-  nameEn: string
-  role: string
-  tone: PhotoTone
-  major: string
-  career: readonly string[]
-  quote: string
-}
-
-export const INSTRUCTORS = [
+const SEED_DATA = [
   {
     name: '박서연',
     nameEn: 'PARK SEOYEON',
@@ -23,6 +15,10 @@ export const INSTRUCTORS = [
       'Cergy Violin Atelier 설립 (2020)',
     ],
     quote: '서두르지 않아도 괜찮습니다. 한 음을 정확히 듣는 일이 먼저입니다.',
+    schedule: [],
+    featured: true,
+    sortOrder: 0,
+    active: true,
   },
   {
     name: '김민하',
@@ -36,6 +32,10 @@ export const INSTRUCTORS = [
       '성인·유소년 입문 지도 8년',
     ],
     quote: '레슨은 함께 만들어 가는 30분의 대화입니다.',
+    schedule: [],
+    featured: true,
+    sortOrder: 1,
+    active: true,
   },
   {
     name: '이지우',
@@ -49,5 +49,32 @@ export const INSTRUCTORS = [
       '입시·콩쿠르 지도 5년',
     ],
     quote: '기술 너머의 음악성을 함께 찾아 갑니다.',
+    schedule: [],
+    featured: false,
+    sortOrder: 2,
+    active: true,
   },
-] as const satisfies readonly Instructor[]
+] as const
+
+async function seed() {
+  await connect(env.MONGODB_URI)
+  console.log('MongoDB 연결 완료')
+
+  const existing = await Instructor.countDocuments()
+  if (existing > 0) {
+    console.log(`이미 ${existing}명의 강사가 등록되어 있습니다. 시드를 건너뜁니다.`)
+    await disconnect()
+    return
+  }
+
+  await Instructor.insertMany(SEED_DATA)
+  console.log(`${SEED_DATA.length}명의 강사 데이터를 등록했습니다.`)
+
+  await disconnect()
+  console.log('완료')
+}
+
+seed().catch((error) => {
+  console.error('시드 실패:', error)
+  process.exit(1)
+})

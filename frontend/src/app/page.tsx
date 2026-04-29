@@ -5,8 +5,11 @@ import {
   isVideo,
   listGallery,
   listNotices,
+  listInstructors,
+  getImageUrl,
   type GalleryItem,
   type NoticeItem,
+  type InstructorItem,
 } from '@/lib/api'
 import { Display } from '@/components/Display'
 import { Eyebrow } from '@/components/Eyebrow'
@@ -21,16 +24,19 @@ export const dynamic = 'force-dynamic'
 async function fetchHomeData(): Promise<{
   notices: NoticeItem[]
   gallery: GalleryItem[]
+  instructors: InstructorItem[]
 }> {
-  const [noticesResult, galleryResult] = await Promise.allSettled([
+  const [noticesResult, galleryResult, instructorsResult] = await Promise.allSettled([
     listNotices(1, 3),
     listGallery(),
+    listInstructors(true),
   ])
   const notices = noticesResult.status === 'fulfilled' ? noticesResult.value.items : []
   const galleryAll = galleryResult.status === 'fulfilled' ? galleryResult.value.items : []
   const featured = galleryAll.filter((item) => item.featured)
   const gallery = (featured.length > 0 ? featured : galleryAll).slice(0, 4)
-  return { notices, gallery }
+  const instructors = instructorsResult.status === 'fulfilled' ? instructorsResult.value.items : []
+  return { notices, gallery, instructors }
 }
 
 function formatNoticeDate(iso: string): string {
@@ -43,7 +49,7 @@ function formatNoticeDate(iso: string): string {
   return `${month}.${day}`
 }
 
-const PREVIEW_INSTRUCTORS = [
+const FALLBACK_INSTRUCTORS = [
   { name: '박서연', nameEn: 'PARK SEOYEON', role: '원장 · Director', tone: 'green' as const },
   { name: '김민하', nameEn: 'KIM MINHA', role: '전임강사 · Lecturer', tone: 'wood' as const },
 ]
@@ -56,8 +62,11 @@ const FALLBACK_GALLERY = [
 ]
 
 export default async function HomePage() {
-  const { notices, gallery } = await fetchHomeData()
+  const { notices, gallery, instructors } = await fetchHomeData()
   const eventCount = notices.filter((notice) => notice.tag === 'EVENT').length
+  const previewInstructors = instructors.length > 0
+    ? instructors
+    : FALLBACK_INSTRUCTORS.map((item) => ({ ...item, photoUrl: undefined }))
 
   return (
     <div style={{ background: TOKENS.bg, paddingBottom: 24 }}>
@@ -240,12 +249,23 @@ export default async function HomePage() {
 
       {/* INSTRUCTORS preview */}
       <div style={{ padding: '56px 24px 32px', background: TOKENS.bgWarm }}>
-        <SectionHead eyebrow="INSTRUCTORS" title="선생님" action="ALL" />
+        <SectionHead eyebrow="INSTRUCTORS" title="강사진" action="ALL" href="/instructors" />
         <Link href="/instructors" style={{ cursor: 'pointer', textDecoration: 'none' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            {PREVIEW_INSTRUCTORS.map((person) => (
+            {previewInstructors.map((person) => (
               <div key={person.name}>
-                <Photo label={person.name} height={180} tone={person.tone} />
+                {person.photoUrl ? (
+                  <div style={{ position: 'relative', width: '100%', height: 180, overflow: 'hidden' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getImageUrl(person.photoUrl)}
+                      alt={person.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                ) : (
+                  <Photo label={person.name} height={180} tone={person.tone} />
+                )}
                 <div style={{ marginTop: 10 }}>
                   <Display size={16} italic={false} color={TOKENS.green} fontWeight={600}>
                     {person.name}
@@ -281,7 +301,7 @@ export default async function HomePage() {
       {/* MOMENTS */}
       <div style={{ padding: '56px 0 32px', background: TOKENS.bg }}>
         <div style={{ padding: '0 24px' }}>
-          <SectionHead eyebrow="MOMENTS" title="최근의 순간들" action="GALLERY" />
+          <SectionHead eyebrow="MOMENTS" title="최근의 순간들" action="GALLERY" href="/gallery" />
         </div>
         {gallery.length > 0 ? (
           <Link
@@ -409,6 +429,7 @@ export default async function HomePage() {
             </>
           }
           action="BOARD"
+          href="/notice"
         />
         <Link href="/notice" style={{ cursor: 'pointer', textDecoration: 'none' }}>
           {notices.length > 0 ? (

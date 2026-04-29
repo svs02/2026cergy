@@ -6,7 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "seed:instructors": "tsx src/seed-instructors.ts"
   },
   "dependencies": {
     "connect-mongo": "^5.1.0",

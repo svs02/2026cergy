@@ -214,3 +214,105 @@ export async function uploadImage(file: File): Promise<UploadResponse> {
     body: form,
   })
 }
+
+/* ── Instructor ── */
+
+export const PhotoTone = {
+  GREEN: 'green',
+  GREEN_L: 'greenL',
+  WOOD: 'wood',
+  SUN: 'sun',
+  CREAM: 'cream',
+  IVORY: 'ivory',
+} as const
+export type PhotoTone = (typeof PhotoTone)[keyof typeof PhotoTone]
+
+export const Day = {
+  MON: '월',
+  TUE: '화',
+  WED: '수',
+  THU: '목',
+  FRI: '금',
+  SAT: '토',
+  SUN: '일',
+} as const
+export type Day = (typeof Day)[keyof typeof Day]
+
+export interface ScheduleSlot {
+  day: Day
+  startTime: string
+  endTime: string
+  lessonName: string
+}
+
+export interface InstructorItem {
+  _id: string
+  name: string
+  nameEn: string
+  role: string
+  photoUrl?: string
+  tone: PhotoTone
+  major: string
+  career: string[]
+  quote?: string
+  schedule: ScheduleSlot[]
+  featured: boolean
+  sortOrder: number
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface InstructorListResponse {
+  items: InstructorItem[]
+}
+
+export interface InstructorInput {
+  name: string
+  nameEn: string
+  role: string
+  photoUrl?: string
+  tone: PhotoTone
+  major: string
+  career: string[]
+  quote?: string
+  schedule: ScheduleSlot[]
+  featured: boolean
+  active: boolean
+}
+
+export async function listInstructors(featured?: boolean): Promise<InstructorListResponse> {
+  const query = featured ? '?featured=true' : ''
+  return apiFetch<InstructorListResponse>(`/api/instructors${query}`)
+}
+
+export async function getInstructor(id: string): Promise<InstructorItem> {
+  return apiFetch<InstructorItem>(`/api/instructors/${id}`)
+}
+
+export async function createInstructor(data: InstructorInput): Promise<InstructorItem> {
+  return apiFetch<InstructorItem>('/api/instructors', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateInstructor(id: string, data: Partial<InstructorInput>): Promise<InstructorItem> {
+  return apiFetch<InstructorItem>(`/api/instructors/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteInstructor(id: string): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(`/api/instructors/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function reorderInstructors(orderedIds: string[]): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>('/api/instructors/reorder', {
+    method: 'PATCH',
+    body: JSON.stringify({ orderedIds }),
+  })
+}

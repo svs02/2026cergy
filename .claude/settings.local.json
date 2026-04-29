@@ -27,7 +27,11 @@
       "Read(//Users/luke/Desktop/PP/2026cergy/$HOME/.nvm/**)",
       "Bash(echo \"NVM_DIR=$NVM_DIR\")",
       "Bash(. \"$HOME/.nvm/nvm.sh\")",
-      "Bash(nvm ls:*)"
+      "Bash(nvm ls:*)",
+      "Bash(grep -r \"instructor\\\\|Instructor\" /Users/luke/Desktop/PP/2026cergy/backend --include=*.ts --include=*.js)",
+      "Bash(find /Users/luke/Desktop/PP/2026cergy/frontend/src/app/admin -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\))",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm tsc:*)"
     ]
   }
 }

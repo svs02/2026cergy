@@ -15,7 +15,7 @@ interface MenuItem {
 const MENU_ITEMS: readonly MenuItem[] = [
   { label: '홈', en: 'HOME', route: '/' },
   { label: '커리큘럼', en: 'LESSONS', route: '/lessons' },
-  { label: '선생님', en: 'INSTRUCTORS', route: '/instructors' },
+  { label: '강사진', en: 'INSTRUCTORS', route: '/instructors' },
   { label: '갤러리', en: 'GALLERY', route: '/gallery' },
   { label: '공지', en: 'NOTICE', route: '/notice' },
   { label: '오시는 길', en: 'VISIT', route: '/#visit' },
