@@ -22,7 +22,8 @@
       "Read(//Users/luke/.nvm/versions/node/**)",
       "Read(//Users/luke/Library/pnpm/**)",
       "Read(//Users/luke/**)",
-      "Bash(~/.nvm/versions/node/v20.20.2/bin/node --version)"
+      "Bash(~/.nvm/versions/node/v20.20.2/bin/node --version)",
+      "Bash(ipconfig getifaddr:*)"
     ]
   }
 }

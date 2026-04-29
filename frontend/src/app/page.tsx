@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { TOKENS } from '@/lib/tokens'
 import {
@@ -62,7 +63,14 @@ export default async function HomePage() {
     <div style={{ background: TOKENS.bg, paddingBottom: 24 }}>
       {/* HERO */}
       <div style={{ position: 'relative', height: 560, overflow: 'hidden' }}>
-        <Photo label="HERO · 학원 창가 · 햇살" height={560} tone="green" />
+        <Image
+          src="/image/heroPage.png"
+          alt="Cergy Music Academy 히어로"
+          fill
+          sizes="100vw"
+          style={{ objectFit: 'cover' }}
+          priority
+        />
         <div
           style={{
             position: 'absolute',
@@ -83,16 +91,25 @@ export default async function HomePage() {
             zIndex: 2,
           }}
         >
-          <div
-            style={{
-              fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
-              fontStyle: 'italic',
-              fontSize: 22,
-              color: '#fff',
-              letterSpacing: 1,
-            }}
-          >
-            Cergy Music Academy
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Image
+              src="/image/153598104_910771036327156_2048521052833619321_n.jpg"
+              alt="Cergy Music Academy 로고"
+              width={40}
+              height={40}
+              style={{ borderRadius: '50%' }}
+            />
+            <div
+              style={{
+                fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+                fontStyle: 'italic',
+                fontSize: 22,
+                color: TOKENS.ink,
+                letterSpacing: 1,
+              }}
+            >
+              Cergy Music Academy
+            </div>
           </div>
           <HeroMenuButton />
         </div>

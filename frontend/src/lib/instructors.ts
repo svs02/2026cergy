@@ -20,7 +20,7 @@ export const INSTRUCTORS = [
     career: [
       '뉴잉글랜드 콘서바토리 석사 (Violin Performance)',
       'KBS 교향악단 객원 단원 역임',
-      'Cergy Violin Atelier 설립 (2014)',
+      'Cergy Violin Atelier 설립 (2020)',
     ],
     quote: '서두르지 않아도 괜찮습니다. 한 음을 정확히 듣는 일이 먼저입니다.',
   },
