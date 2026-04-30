@@ -1,3 +1,4 @@
+import { IconBrandInstagram } from '@tabler/icons-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { TOKENS } from '@/lib/tokens'
@@ -133,7 +134,7 @@ export default async function HomePage() {
             zIndex: 2,
           }}
         >
-          <Eyebrow color={TOKENS.sun}>SINCE 2020 · VIOLIN ATELIER</Eyebrow>
+          <Eyebrow color={TOKENS.sun}>SINCE 2020 · MUSIC ATELIER</Eyebrow>
           <Display size={40} color="#fff" style={{ marginTop: 14, fontWeight: 500 }}>
             오늘, 한 음을
             <br />
@@ -690,7 +691,15 @@ export default async function HomePage() {
             letterSpacing: 1.5,
           }}
         >
-          <span>INSTAGRAM</span>
+          <a
+            href="https://www.instagram.com/cergy_violin.piano?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+            target="_blank"
+            rel="noopener noreferrer"
+            className="instagram-link"
+          >
+            <IconBrandInstagram size={16} stroke={1.5} />
+            INSTAGRAM
+          </a>
         </div>
       </div>
     </div>

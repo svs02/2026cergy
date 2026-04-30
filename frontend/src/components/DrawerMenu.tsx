@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { TOKENS } from '@/lib/tokens'
 import { useDrawer } from './DrawerContext'
 import { useAdmin } from './AdminContext'
+import { IconBrandInstagram, IconLetterC, IconPhone } from '@tabler/icons-react'
 import { CloseIcon } from './Icons'
 import { useLongPress } from '@/hooks/useLongPress'
 
@@ -186,10 +187,31 @@ export function DrawerMenu() {
             marginTop: 24,
           }}
         >
-          0507-1479-3133
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+
+            CERGY MUSIC ACADEMY
+          </span>
           <br />
-          평일 13–21시 · 토 10–18시
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <IconPhone size={13} stroke={1.5} />
+            0507-1479-3133
+          </span>
         </div>
+        <a
+          href="https://www.instagram.com/cergy_violin.piano?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+          target="_blank"
+          rel="noopener noreferrer"
+          className="instagram-link"
+          style={{
+            marginTop: 12,
+            fontSize: 10,
+            letterSpacing: 2,
+            fontFamily: "var(--font-sans), 'Inter', sans-serif",
+          }}
+        >
+          <IconBrandInstagram size={15} stroke={1.5} />
+          INSTAGRAM
+        </a>
       </div>
     </>
   )

@@ -32,7 +32,7 @@ const notoSansKr = Noto_Sans_KR({
 })
 
 export const metadata: Metadata = {
-  title: 'Cergy Violin Atelier',
+  title: 'Cergy Music Atelier',
   description: '바이올린 학원 — 도심 속 작은 살롱에서, 천천히 한 음씩.',
 }
 

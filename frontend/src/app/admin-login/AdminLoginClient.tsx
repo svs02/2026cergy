@@ -72,7 +72,7 @@ export function AdminLoginClient() {
               marginTop: 4,
             }}
           >
-            VIOLIN ATELIER
+            MUSIC ATELIER
           </div>
         </div>
 
