@@ -31,6 +31,8 @@ export interface NoticeItem {
   tag: NoticeTag
   images: string[]
   views: number
+  isPinned: boolean
+  pinnedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -152,6 +154,13 @@ export async function updateNotice(id: string, data: NoticeInput): Promise<Notic
 export async function deleteNotice(id: string): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>(`/api/notices/${id}`, {
     method: 'DELETE',
+  })
+}
+
+export async function toggleNoticePin(id: string, isPinned: boolean): Promise<NoticeItem> {
+  return apiFetch<NoticeItem>(`/api/notices/${id}/pin`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isPinned }),
   })
 }
 

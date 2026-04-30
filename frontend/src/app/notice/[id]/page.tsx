@@ -5,10 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { notifications } from '@mantine/notifications'
 import { TOKENS } from '@/lib/tokens'
-import { deleteNotice, getImageUrl, getNotice, type NoticeItem } from '@/lib/api'
+import { deleteNotice, getImageUrl, getNotice, toggleNoticePin, type NoticeItem } from '@/lib/api'
 import { Display } from '@/components/Display'
 import { Eyebrow } from '@/components/Eyebrow'
-import { ArrowIcon, BackIcon } from '@/components/Icons'
+import { BackIcon } from '@/components/Icons'
 import { useAdmin } from '@/components/AdminContext'
 
 function formatDate(iso: string): string {
@@ -69,6 +69,27 @@ export default function NoticeDetailPage({ params }: PageProps) {
     } catch (err) {
       notifications.show({
         title: '삭제 실패',
+        message: err instanceof Error ? err.message : '알 수 없는 오류',
+        color: 'red',
+      })
+    }
+  }
+
+  const handleTogglePin = async () => {
+    if (!item) {
+      return
+    }
+    try {
+      const updated = await toggleNoticePin(item._id, !item.isPinned)
+      setItem(updated)
+      notifications.show({
+        title: '완료',
+        message: updated.isPinned ? '공지를 상단에 고정했습니다.' : '고정을 해제했습니다.',
+        color: 'green',
+      })
+    } catch (err) {
+      notifications.show({
+        title: '오류',
         message: err instanceof Error ? err.message : '알 수 없는 오류',
         color: 'red',
       })
@@ -198,35 +219,34 @@ export default function NoticeDetailPage({ params }: PageProps) {
           </div>
         )}
 
-        {item.tag === 'EVENT' && (
-          <a
-            href="mailto:hello@cergy.example"
+
+        {isAdmin && (
+          <button
+            onClick={() => void handleTogglePin()}
             style={{
               marginTop: 28,
               width: '100%',
-              padding: '16px',
-              background: TOKENS.green,
-              color: '#fff',
-              border: 'none',
+              padding: '12px',
+              background: item.isPinned ? 'transparent' : TOKENS.gold,
+              color: item.isPinned ? TOKENS.gold : '#fff',
+              border: item.isPinned ? `1px solid ${TOKENS.gold}` : 'none',
               fontFamily: "var(--font-sans), 'Inter', sans-serif",
-              fontSize: 12,
-              fontWeight: 600,
+              fontSize: 11,
               letterSpacing: 2,
+              fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 10,
-              textDecoration: 'none',
-              boxSizing: 'border-box',
+              gap: 6,
             }}
           >
-            예약하기 <ArrowIcon size={12} color="#fff" />
-          </a>
+            {item.isPinned ? '고정 해제' : '상단 고정'}
+          </button>
         )}
 
         {isAdmin && (
-          <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
+          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
             <Link
               href={`/notice/${item._id}/edit`}
               style={{

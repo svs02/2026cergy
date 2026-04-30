@@ -164,9 +164,28 @@ export default function NoticeListPage() {
                   color: TOKENS.ink,
                   lineHeight: 1.45,
                   marginBottom: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
                 }}
               >
-                {item.title}
+                {item.isPinned && (
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      fontFamily: "var(--font-sans), 'Inter', sans-serif",
+                      letterSpacing: 1,
+                      color: TOKENS.gold,
+                      border: `1px solid ${TOKENS.gold}`,
+                      padding: '2px 6px',
+                    }}
+                  >
+                    고정
+                  </span>
+                )}
+                <span>{item.title}</span>
               </div>
               <div
                 style={{

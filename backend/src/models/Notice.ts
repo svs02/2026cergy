@@ -13,6 +13,8 @@ export interface INotice {
   images: string[]
   tag: NoticeTag
   views: number
+  isPinned: boolean
+  pinnedAt: Date | null
 }
 
 const noticeSchema = new Schema<INotice>(
@@ -27,10 +29,12 @@ const noticeSchema = new Schema<INotice>(
       default: NoticeTag.NOTICE,
     },
     views: { type: Number, default: 0 },
+    isPinned: { type: Boolean, default: false },
+    pinnedAt: { type: Date, default: null },
   },
   { timestamps: true }
 )
 
-noticeSchema.index({ createdAt: -1 })
+noticeSchema.index({ isPinned: -1, pinnedAt: -1, createdAt: -1 })
 
 export const Notice = model<INotice>('Notice', noticeSchema)

@@ -5,6 +5,7 @@ import { TOKENS } from '@/lib/tokens'
 import { useDrawer } from './DrawerContext'
 import { useAdmin } from './AdminContext'
 import { CloseIcon } from './Icons'
+import { useLongPress } from '@/hooks/useLongPress'
 
 interface MenuItem {
   label: string
@@ -26,6 +27,14 @@ export function DrawerMenu() {
   const router = useRouter()
   const pathname = usePathname()
   const { isAdmin, logout } = useAdmin()
+
+  const { onPointerDown, onPointerUp, onPointerLeave, onPointerCancel } = useLongPress({
+    onLongPress: () => {
+      close()
+      router.push('/admin-login')
+    },
+    durationMs: 5000,
+  })
 
   if (!isOpen) {
     return null
@@ -85,11 +94,20 @@ export function DrawerMenu() {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div
+            onPointerDown={isAdmin ? undefined : onPointerDown}
+            onPointerUp={isAdmin ? undefined : onPointerUp}
+            onPointerLeave={isAdmin ? undefined : onPointerLeave}
+            onPointerCancel={isAdmin ? undefined : onPointerCancel}
+            onContextMenu={isAdmin ? undefined : (event) => event.preventDefault()}
             style={{
               fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
               fontStyle: 'italic',
               fontSize: 24,
               color: TOKENS.bg,
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none',
+              touchAction: 'manipulation',
             }}
           >
             Cergy Music Academy
