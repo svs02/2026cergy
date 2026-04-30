@@ -22,6 +22,7 @@ const updateNoticeSchema = z.strictObject({
 const listQuerySchema = z.strictObject({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  ignorePin: z.coerce.boolean().default(false),
 })
 
 noticeRouter.get('/', async (req, res, next) => {
@@ -31,11 +32,14 @@ noticeRouter.get('/', async (req, res, next) => {
       res.status(400).json({ error: '잘못된 쿼리 파라미터입니다' })
       return
     }
-    const { page, limit } = parsed.data
+    const { page, limit, ignorePin } = parsed.data
     const skip = (page - 1) * limit
+    const sort = ignorePin
+      ? { createdAt: -1 as const }
+      : { isPinned: -1 as const, pinnedAt: -1 as const, createdAt: -1 as const }
 
     const [items, total] = await Promise.all([
-      Notice.find().sort({ isPinned: -1, pinnedAt: -1, createdAt: -1 }).skip(skip).limit(limit),
+      Notice.find().sort(sort).skip(skip).limit(limit),
       Notice.countDocuments(),
     ])
 

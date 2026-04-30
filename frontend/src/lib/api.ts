@@ -122,8 +122,9 @@ export async function adminLogout(): Promise<{ ok: true }> {
   })
 }
 
-export async function listNotices(page = 1, limit = 20): Promise<NoticeListResponse> {
-  return apiFetch<NoticeListResponse>(`/api/notices?page=${page}&limit=${limit}`)
+export async function listNotices(page = 1, limit = 20, ignorePin = false): Promise<NoticeListResponse> {
+  const params = `page=${page}&limit=${limit}${ignorePin ? '&ignorePin=true' : ''}`
+  return apiFetch<NoticeListResponse>(`/api/notices?${params}`)
 }
 
 export async function getNotice(id: string): Promise<NoticeItem> {

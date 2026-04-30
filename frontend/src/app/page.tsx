@@ -27,7 +27,7 @@ async function fetchHomeData(): Promise<{
   instructors: InstructorItem[]
 }> {
   const [noticesResult, galleryResult, instructorsResult] = await Promise.allSettled([
-    listNotices(1, 3),
+    listNotices(1, 3, true),
     listGallery(),
     listInstructors(true),
   ])
@@ -412,7 +412,7 @@ export default async function HomePage() {
           eyebrow="NOTICE"
           title={
             <>
-              공지{' '}
+              공지 · 이벤트
               <span
                 style={{
                   fontSize: 14,
@@ -424,79 +424,79 @@ export default async function HomePage() {
                   fontWeight: 600,
                 }}
               >
-                · EVENT {eventCount}
               </span>
             </>
           }
           action="BOARD"
           href="/notice"
         />
-        <Link href="/notice" style={{ cursor: 'pointer', textDecoration: 'none' }}>
-          {notices.length > 0 ? (
-            notices.map((notice) => {
-              const tagColor = notice.tag === 'EVENT' ? TOKENS.gold : TOKENS.green
-              return (
+        {notices.length > 0 ? (
+          notices.map((notice) => {
+            const tagColor = notice.tag === 'EVENT' ? TOKENS.gold : TOKENS.green
+            return (
+              <Link
+                key={notice._id}
+                href={`/notice/${notice._id}`}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '62px 1fr auto',
+                  gap: 12,
+                  alignItems: 'center',
+                  padding: '14px 0',
+                  borderBottom: '0.5px solid rgba(22,32,29,.12)',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                }}
+              >
                 <div
-                  key={notice._id}
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: '62px 1fr auto',
-                    gap: 12,
-                    alignItems: 'center',
-                    padding: '14px 0',
-                    borderBottom: '0.5px solid rgba(22,32,29,.12)',
+                    fontSize: 9,
+                    letterSpacing: 1.5,
+                    fontWeight: 700,
+                    fontFamily: "var(--font-sans), 'Inter', sans-serif",
+                    color: tagColor,
+                    border: `1px solid ${tagColor}`,
+                    padding: '4px 0',
+                    textAlign: 'center',
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: 9,
-                      letterSpacing: 1.5,
-                      fontWeight: 700,
-                      fontFamily: "var(--font-sans), 'Inter', sans-serif",
-                      color: tagColor,
-                      border: `1px solid ${tagColor}`,
-                      padding: '4px 0',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {notice.tag}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-kr), 'Noto Sans KR', sans-serif",
-                      fontSize: 13.5,
-                      color: TOKENS.ink,
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {notice.title}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-sans), 'Inter', sans-serif",
-                      fontSize: 11,
-                      color: TOKENS.inkMute,
-                    }}
-                  >
-                    {formatNoticeDate(notice.createdAt)}
-                  </div>
+                  {notice.tag}
                 </div>
-              )
-            })
-          ) : (
-            <div
-              style={{
-                padding: '32px 0',
-                textAlign: 'center',
-                fontFamily: "var(--font-kr), 'Noto Sans KR', sans-serif",
-                fontSize: 13,
-                color: TOKENS.inkMute,
-              }}
-            >
-              준비된 공지가 없습니다.
-            </div>
-          )}
-        </Link>
+                <div
+                  style={{
+                    fontFamily: "var(--font-kr), 'Noto Sans KR', sans-serif",
+                    fontSize: 13.5,
+                    color: TOKENS.ink,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {notice.title}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-sans), 'Inter', sans-serif",
+                    fontSize: 11,
+                    color: TOKENS.inkMute,
+                  }}
+                >
+                  {formatNoticeDate(notice.createdAt)}
+                </div>
+              </Link>
+            )
+          })
+        ) : (
+          <div
+            style={{
+              padding: '32px 0',
+              textAlign: 'center',
+              fontFamily: "var(--font-kr), 'Noto Sans KR', sans-serif",
+              fontSize: 13,
+              color: TOKENS.inkMute,
+            }}
+          >
+            준비된 공지가 없습니다.
+          </div>
+        )}
       </div>
 
       {/* VISIT */}
