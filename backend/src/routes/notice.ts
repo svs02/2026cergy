@@ -34,12 +34,15 @@ noticeRouter.get('/', async (req, res, next) => {
     }
     const { page, limit, ignorePin } = parsed.data
     const skip = (page - 1) * limit
-    const sort = ignorePin
-      ? { createdAt: -1 as const }
-      : { isPinned: -1 as const, pinnedAt: -1 as const, createdAt: -1 as const }
+    const query = Notice.find()
+    if (ignorePin) {
+      query.sort({ createdAt: -1 })
+    } else {
+      query.sort({ isPinned: -1, pinnedAt: -1, createdAt: -1 })
+    }
 
     const [items, total] = await Promise.all([
-      Notice.find().sort(sort).skip(skip).limit(limit),
+      query.skip(skip).limit(limit),
       Notice.countDocuments(),
     ])
 

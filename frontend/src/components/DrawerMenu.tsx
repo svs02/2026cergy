@@ -186,7 +186,7 @@ export function DrawerMenu() {
             marginTop: 24,
           }}
         >
-          02-1234-5678
+          0507-1479-3133
           <br />
           평일 13–21시 · 토 10–18시
         </div>

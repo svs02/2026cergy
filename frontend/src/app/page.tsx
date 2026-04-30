@@ -18,6 +18,7 @@ import { SectionHead } from '@/components/SectionHead'
 import { Photo } from '@/components/Photo'
 import { ArrowIcon, MapIcon, PhoneIcon, PlayIcon } from '@/components/Icons'
 import { HeroMenuButton } from '@/components/HeroMenuButton'
+import { NaverMap } from '@/components/NaverMap'
 
 export const dynamic = 'force-dynamic'
 
@@ -508,70 +509,131 @@ export default async function HomePage() {
         <GoldRule width={32} color={TOKENS.goldBright} />
         <div
           style={{
-            fontFamily: "var(--font-kr), 'Noto Sans KR', sans-serif",
-            fontSize: 14,
-            lineHeight: 1.8,
-            color: 'rgba(255,255,255,.85)',
-            marginTop: 14,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 16,
+            marginTop: 24,
           }}
         >
-          서울 마포구 와우산로 23-7, 3층
-          <br />
-          홍대입구역 9번 출구에서 도보 4분
-          <br />
-          평일 13:00 — 21:00 / 토요일 10:00 — 18:00
-        </div>
-        <div style={{ marginTop: 20, height: 180, position: 'relative' }}>
-          <Photo label="MAP · 위치 지도" height={180} tone="greenL" />
-        </div>
-        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-          <a
-            href="https://map.naver.com/"
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              flex: 1,
-              padding: '14px',
-              textAlign: 'center',
-              background: '#fff',
-              color: TOKENS.green,
-              fontFamily: "var(--font-sans), 'Inter', sans-serif",
-              fontSize: 12,
-              fontWeight: 600,
-              letterSpacing: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              cursor: 'pointer',
-              textDecoration: 'none',
-            }}
-          >
-            <MapIcon size={14} color={TOKENS.green} /> 지도 열기
-          </a>
-          <a
-            href="tel:02-1234-5678"
-            style={{
-              flex: 1,
-              padding: '14px',
-              textAlign: 'center',
-              background: 'transparent',
-              color: '#fff',
-              border: '1px solid #fff',
-              fontFamily: "var(--font-sans), 'Inter', sans-serif",
-              fontSize: 12,
-              fontWeight: 600,
-              letterSpacing: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              cursor: 'pointer',
-              textDecoration: 'none',
-            }}
-          >
-            <PhoneIcon size={14} color="#fff" /> 전화하기
-          </a>
+          {[
+            {
+              name: '도화본원',
+              address: '인천광역시 미추홀구 숙골로 104 YG프라자 202호',
+              phone: '0507-1479-3133',
+              mapUrl: 'https://naver.me/xVBn7rw0',
+              lat: 37.4490,
+              lng: 126.6530,
+            },
+            {
+              name: '동인천점',
+              address: '인천광역시 동구 화도진로 16 동인천역 파크푸르지오 상가 205호',
+              phone: '0507-1479-3134',
+              mapUrl: 'https://naver.me/F6lfEZsV',
+              lat: 37.4735,
+              lng: 126.6432,
+            },
+          ].map((branch) => (
+            <div
+              key={branch.name}
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                borderRadius: 12,
+                padding: '24px 20px',
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "var(--font-kr), 'Noto Sans KR', sans-serif",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: '#fff',
+                  marginBottom: 12,
+                }}
+              >
+                {branch.name}
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <NaverMap latitude={branch.lat} longitude={branch.lng} height={160} label={`${branch.name} 위치 지도`} mapUrl={branch.mapUrl} />
+              </div>
+              <a
+                href={branch.mapUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  fontFamily: "var(--font-kr), 'Noto Sans KR', sans-serif",
+                  fontSize: 13,
+                  lineHeight: 1.7,
+                  color: 'rgba(255,255,255,.85)',
+                  textDecoration: 'none',
+                  display: 'block',
+                }}
+              >
+                {branch.address}
+              </a>
+              <a
+                href={`tel:${branch.phone}`}
+                style={{
+                  fontFamily: "var(--font-kr), 'Noto Sans KR', sans-serif",
+                  fontSize: 13,
+                  color: 'rgba(255,255,255,.85)',
+                  textDecoration: 'none',
+                  display: 'block',
+                  marginTop: 4,
+                }}
+              >
+                {branch.phone}
+              </a>
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <a
+                  href={branch.mapUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    textAlign: 'center',
+                    background: '#fff',
+                    color: TOKENS.green,
+                    fontFamily: "var(--font-sans), 'Inter', sans-serif",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    borderRadius: 6,
+                    textDecoration: 'none',
+                  }}
+                >
+                  <MapIcon size={13} color={TOKENS.green} /> 지도 열기
+                </a>
+                <a
+                  href={`tel:${branch.phone}`}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    textAlign: 'center',
+                    background: 'transparent',
+                    color: '#fff',
+                    border: '1px solid rgba(255,255,255,.4)',
+                    fontFamily: "var(--font-sans), 'Inter', sans-serif",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    borderRadius: 6,
+                    textDecoration: 'none',
+                  }}
+                >
+                  <PhoneIcon size={13} color="#fff" /> 전화하기
+                </a>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -614,9 +676,9 @@ export default async function HomePage() {
         >
           © 2026 Cergy Music Academy
           <br />
-          서울 마포구 와우산로 23-7 · 02-1234-5678
+          인천 미추홀구 숙골로 104 · 0507-1479-3133
           <br />
-          사업자등록번호 123-45-67890
+          사업자등록번호 117-98-28337
         </div>
         <div
           style={{
@@ -629,8 +691,6 @@ export default async function HomePage() {
           }}
         >
           <span>INSTAGRAM</span>
-          <span>YOUTUBE</span>
-          <span>BLOG</span>
         </div>
       </div>
     </div>
