@@ -326,3 +326,64 @@ export async function reorderInstructors(orderedIds: string[]): Promise<{ ok: tr
     body: JSON.stringify({ orderedIds }),
   })
 }
+
+/* ── Lesson ── */
+
+export interface LessonItem {
+  _id: string
+  title: string
+  subtitle: string
+  description: string
+  price: string
+  sortOrder: number
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LessonListResponse {
+  items: LessonItem[]
+}
+
+export interface LessonInput {
+  title: string
+  subtitle: string
+  description: string
+  price: string
+  active: boolean
+}
+
+export async function listLessons(): Promise<LessonListResponse> {
+  return apiFetch<LessonListResponse>('/api/lessons')
+}
+
+export async function getLesson(id: string): Promise<LessonItem> {
+  return apiFetch<LessonItem>(`/api/lessons/${id}`)
+}
+
+export async function createLesson(data: LessonInput): Promise<LessonItem> {
+  return apiFetch<LessonItem>('/api/lessons', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateLesson(id: string, data: Partial<LessonInput>): Promise<LessonItem> {
+  return apiFetch<LessonItem>(`/api/lessons/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteLesson(id: string): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(`/api/lessons/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function reorderLessons(orderedIds: string[]): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>('/api/lessons/reorder', {
+    method: 'PATCH',
+    body: JSON.stringify({ orderedIds }),
+  })
+}

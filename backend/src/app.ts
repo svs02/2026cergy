@@ -10,9 +10,11 @@ import { noticeRouter } from './routes/notice'
 import { galleryRouter } from './routes/gallery'
 import { uploadRouter } from './routes/upload'
 import { instructorRouter } from './routes/instructor'
+import { lessonRouter } from './routes/lesson'
 import { Notice } from './models/Notice'
 import { Gallery } from './models/Gallery'
 import { Instructor } from './models/Instructor'
+import { Lesson } from './models/Lesson'
 
 const app = express()
 
@@ -43,6 +45,7 @@ app.use('/api/notices', noticeRouter)
 app.use('/api/gallery', galleryRouter)
 app.use('/api/upload', uploadRouter)
 app.use('/api/instructors', instructorRouter)
+app.use('/api/lessons', lessonRouter)
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })
@@ -51,7 +54,7 @@ app.get('/health', (_req, res) => {
 if (process.env.NODE_ENV === 'test') {
   app.post('/api/test/reset', async (_req, res, next) => {
     try {
-      await Promise.all([Notice.deleteMany({}), Gallery.deleteMany({}), Instructor.deleteMany({})])
+      await Promise.all([Notice.deleteMany({}), Gallery.deleteMany({}), Instructor.deleteMany({}), Lesson.deleteMany({})])
       res.json({ ok: true })
     } catch (error) {
       next(error)

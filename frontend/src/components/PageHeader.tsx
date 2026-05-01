@@ -15,13 +15,14 @@ interface PageHeaderProps {
   eyebrow: ReactNode
   lead?: ReactNode
   backLabel?: string
+  backHref?: string
 }
 
-export function PageHeader({ title, eyebrow, lead, backLabel = 'BACK' }: PageHeaderProps) {
+export function PageHeader({ title, eyebrow, lead, backLabel = 'BACK', backHref = '/' }: PageHeaderProps) {
   const router = useRouter()
 
   const handleBack = () => {
-    router.push('/')
+    router.push(backHref)
   }
 
   return (
