@@ -7,13 +7,11 @@ export default function LessonsPage() {
   return (
     <div style={{ background: TOKENS.bg, paddingBottom: 40 }}>
       <PageHeader
-        title="네 가지 길"
+        title="커리큘럼"
         eyebrow="CURRICULUM"
         lead={
           <>
-            모든 레슨은 1:1로 진행됩니다.
-            <br />
-            개인의 속도와 목표에 맞춘 커리큘럼을 함께 설계합니다.
+            기초부터 심화까지, 단계적으로 설계된 레슨
           </>
         }
       />

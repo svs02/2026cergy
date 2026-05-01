@@ -18,7 +18,7 @@ import { GoldRule } from '@/components/GoldRule'
 import { SectionHead } from '@/components/SectionHead'
 import { Photo } from '@/components/Photo'
 import { ArrowIcon, MapIcon, PhoneIcon, PlayIcon } from '@/components/Icons'
-import { HeroMenuButton } from '@/components/HeroMenuButton'
+import { HomeHeader } from '@/components/HomeHeader'
 import { NaverMap } from '@/components/NaverMap'
 
 export const dynamic = 'force-dynamic'
@@ -72,6 +72,7 @@ export default async function HomePage() {
 
   return (
     <div style={{ background: TOKENS.bg, paddingBottom: 24 }}>
+      <HomeHeader />
       {/* HERO */}
       <div style={{ position: 'relative', height: 560, overflow: 'hidden' }}>
         <Image
@@ -90,40 +91,6 @@ export default async function HomePage() {
               'radial-gradient(120% 60% at 15% 10%, rgba(245,200,120,.45), transparent 55%), linear-gradient(180deg, rgba(22,32,29,.05) 30%, rgba(22,32,29,.6) 100%)',
           }}
         />
-        <div
-          style={{
-            position: 'absolute',
-            top: 18,
-            left: 20,
-            right: 20,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            zIndex: 2,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Image
-              src="/image/153598104_910771036327156_2048521052833619321_n.jpg"
-              alt="Cergy Music Academy 로고"
-              width={40}
-              height={40}
-              style={{ borderRadius: '50%' }}
-            />
-            <div
-              style={{
-                fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
-                fontStyle: 'italic',
-                fontSize: 22,
-                color: TOKENS.ink,
-                letterSpacing: 1,
-              }}
-            >
-              Cergy Music Academy
-            </div>
-          </div>
-          <HeroMenuButton />
-        </div>
         <div
           style={{
             position: 'absolute',
@@ -174,7 +141,7 @@ export default async function HomePage() {
                 textDecoration: 'none',
               }}
             >
-              체험 레슨 신청 <ArrowIcon size={12} color={TOKENS.green} />
+              커리큘럼 <ArrowIcon size={12} color={TOKENS.green} />
             </Link>
             <Link
               href="/gallery"

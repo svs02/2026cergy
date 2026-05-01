@@ -8,6 +8,7 @@ import { Eyebrow } from './Eyebrow'
 import { GoldRule } from './GoldRule'
 import { BackIcon } from './Icons'
 import { MenuButton } from './MenuButton'
+import { StickyHeader } from './StickyHeader'
 
 interface PageHeaderProps {
   title: ReactNode
@@ -25,40 +26,43 @@ export function PageHeader({ title, eyebrow, lead, backLabel = 'BACK' }: PageHea
 
   return (
     <>
-      <div
-        style={{
-          padding: '18px 16px 4px',
-          display: 'grid',
-          gridTemplateColumns: 'auto 1fr auto',
-          alignItems: 'center',
-          columnGap: 8,
-        }}
-      >
+      <StickyHeader>
         <div
-          onClick={handleBack}
-          role="button"
-          aria-label="이전 페이지로"
           style={{
-            display: 'flex',
+            padding: '18px 16px 4px',
+            display: 'grid',
+            gridTemplateColumns: 'auto 1fr auto',
             alignItems: 'center',
-            gap: 6,
-            padding: '8px 10px 8px 6px',
-            cursor: 'pointer',
-            color: TOKENS.green,
-            fontFamily: "var(--font-sans), 'Inter', sans-serif",
-            fontSize: 11,
-            letterSpacing: 1.5,
-            fontWeight: 600,
+            columnGap: 8,
           }}
         >
-          <BackIcon size={16} color={TOKENS.green} />
-          <span style={{ textTransform: 'uppercase' }}>{backLabel}</span>
+          <div
+            onClick={handleBack}
+            role="button"
+            aria-label="이전 페이지로"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 10px 8px 6px',
+              cursor: 'pointer',
+              color: TOKENS.green,
+              fontFamily: "var(--font-sans), 'Inter', sans-serif",
+              fontSize: 11,
+              letterSpacing: 1.5,
+              fontWeight: 600,
+            }}
+          >
+            <BackIcon size={16} color={TOKENS.green} />
+            <span style={{ textTransform: 'uppercase' }}>{backLabel}</span>
+          </div>
+          <div style={{ paddingLeft: 8 }}>
+            <Eyebrow>{eyebrow}</Eyebrow>
+          </div>
+          <MenuButton color={TOKENS.green} size={22} />
         </div>
-        <div style={{ paddingLeft: 8 }}>
-          <Eyebrow>{eyebrow}</Eyebrow>
-        </div>
-        <MenuButton color={TOKENS.green} size={22} />
-      </div>
+      </StickyHeader>
+      <div style={{ paddingTop: 60 }} />
       <div style={{ padding: '4px 24px 20px' }}>
         <Display size={32} color={TOKENS.green}>
           {title}
