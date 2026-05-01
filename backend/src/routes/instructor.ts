@@ -53,7 +53,7 @@ const updateInstructorSchema = z.strictObject({
 })
 
 const reorderSchema = z.strictObject({
-  orderedIds: z.array(z.string().min(1)).min(1),
+  orderedIds: z.array(z.string().min(1)).min(1).max(500),
 })
 
 // GET /api/instructors

@@ -32,7 +32,24 @@
       "Bash(find /Users/luke/Desktop/PP/2026cergy/frontend/src/app/admin -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\))",
       "Bash(npx tsc:*)",
       "Bash(pnpm tsc:*)",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(find /Users/luke/Desktop/PP/2026cergy -maxdepth 3 -type f \\\\\\(-name Dockerfile -o -name .github -o -name serverless.yml -o -name vercel.json -o -name *.yml -o -name *.yaml \\\\\\))",
+      "Bash(ls /Users/luke/Desktop/PP/2026cergy/ecosystem.config.*)",
+      "Bash(grep -E \"\\\\.\\(ts|js|json\\)$\")",
+      "Bash(find /Users/luke/Desktop/PP/2026cergy -type f -name .gitignore -o -name .env* -o -name *.env)",
+      "Bash(grep -r \"password\\\\|secret\\\\|key\\\\|token\\\\|api\" /Users/luke/Desktop/PP/2026cergy/frontend/.env*)",
+      "Bash(ls -la /Users/luke/Desktop/PP/2026cergy/frontend/.env*)",
+      "Bash(npm audit:*)",
+      "Bash(xargs ls:*)",
+      "Bash(grep -r \"img\\\\|Image\" /Users/luke/Desktop/PP/2026cergy/frontend/src/app/notice/[id]/page.tsx)",
+      "Bash(grep -E \"\\\\.env\\\\.local|\\\\.env$|secrets\")",
+      "Bash(grep -r \"new RegExp\\\\|spawnSync\\\\|execSync\" /Users/luke/Desktop/PP/2026cergy --include=*.ts --include=*.tsx)",
+      "Bash(git log:*)",
+      "Bash(pnpm add:*)",
+      "Bash(npx -y node -e 'require\\(\"\"bcryptjs\"\"\\).hash\\(\"\"test-admin\"\", 10\\).then\\(h => console.log\\(h\\)\\)')",
+      "Bash(source ~/.nvm/nvm.sh)",
+      "Bash(nvm use:*)",
+      "Bash(pnpm --filter e2e test)"
     ]
   }
 }
