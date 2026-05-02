@@ -48,7 +48,14 @@ app.use(
   })
 )
 
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, '..', 'uploads'), {
+    setHeaders: (res) => {
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+    },
+  })
+)
 
 const isTest = process.env.NODE_ENV === 'test'
 
