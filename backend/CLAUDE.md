@@ -98,93 +98,87 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
 
 ---
 
-## AWS 배포 구성
+## 배포 — Fly.io
 
 ### 아키텍처
 
 ```
-인터넷
-  └── Route 53 (도메인)
-        └── ACM (SSL/TLS)
-              └── EC2 (nginx → PM2 → Express)
-                    ├── S3 (미디어 파일 업로드)
-                    └── MongoDB Atlas (DB, AWS VPC Peering 권장)
+인터넷 (cergymusic.com)
+  └── Vercel (프론트엔드, 서울 icn1)
+        └── api.cergymusic.com
+              └── Fly.io (백엔드, 도쿄 nrt)
+                    ├── Fly Volume (/app/uploads, 영구 디스크)
+                    └── MongoDB Atlas (외부)
 ```
 
-### EC2 설정
+### Fly.io 구성
 
-- OS: Ubuntu 22.04 LTS
-- 인스턴스: t3.small 이상 권장
-- 포트: 80(nginx), 443(nginx), 22(SSH — IP 제한 필수)
-- 보안 그룹: 외부에 Express 포트(4000) 직접 노출 금지
+- 앱: `cergy-backend`
+- 리전: `nrt` (도쿄) — 신규 계정은 `icn` 서울 리전 capacity 제한
+- 머신: `shared-cpu-1x` 512MB (`min_machines_running = 0` → 트래픽 없을 때 정지)
+- 영구 볼륨: `uploads_data` 3GB (`/app/uploads` 마운트)
+- SSL: Let's Encrypt 자동 발급 (Fly가 처리)
 
-### nginx 설정 (리버스 프록시)
+### 배포 명령
 
-```nginx
-server {
-    listen 443 ssl;
-    server_name api.yourdomain.com;
-
-    ssl_certificate     /etc/letsencrypt/live/.../fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/.../privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:4000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-### PM2 프로세스 관리
+⚠️ **반드시 모노레포 루트에서 실행** — Dockerfile이 `pnpm-workspace.yaml`을 참조하므로 빌드 컨텍스트는 루트여야 함.
 
 ```bash
-# 빌드 후 실행
-pnpm build
-pm2 start dist/index.js --name cergy-backend
+# 수동 배포
+cd /path/to/2026cergy
+flyctl deploy --remote-only --config backend/fly.toml --dockerfile backend/Dockerfile
 
-# 재시작 정책
-pm2 startup   # 서버 재부팅 시 자동 시작
-pm2 save
+# 자동 배포 (CI)
+# .github/workflows/fly-deploy.yml 가 main 푸시마다 위 명령 실행
 ```
 
-### S3 미디어 파일
+### 환경변수 관리 (Fly Secrets)
 
-- 버킷 이름: `cergy2026-media`
-- 퍼블릭 읽기 차단 — presigned URL로만 접근
-- 업로드: 서버에서 `@aws-sdk/client-s3` 사용
-- 폴더 구조: `gallery/{year}/{month}/`, `profile/`
-
-```typescript
-// presigned URL 생성 패턴
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-```
-
-### 환경변수 관리 (AWS SSM Parameter Store)
-
-운영 환경에서는 `.env.local` 대신 **AWS SSM Parameter Store** 사용.
+운영 환경 환경변수는 **Fly Secrets**로 관리. `.env.local`은 로컬 전용.
 
 ```bash
-# 값 등록
-aws ssm put-parameter --name "/cergy2026/prod/MONGODB_URI" \
-  --value "mongodb+srv://..." --type SecureString
+# 등록
+flyctl secrets set KEY=value -a cergy-backend
 
-# EC2에서 불러오기 (IAM Role 권한 필요)
-aws ssm get-parameter --name "/cergy2026/prod/MONGODB_URI" \
-  --with-decryption --query Parameter.Value --output text
+# 목록 확인 (값은 안 보임)
+flyctl secrets list -a cergy-backend
+
+# 삭제
+flyctl secrets unset KEY -a cergy-backend
 ```
 
-EC2 IAM Role에 `ssm:GetParameter` 권한 부여 필수.
-로컬 개발은 기존대로 `.env.local` 사용.
+⚠️ `$`가 포함된 값(bcrypt 해시 등)은 **반드시 작은따옴표(`'...'`)** 로 감싸기.
+
+운영 시 등록된 secrets:
+- `CLIENT_URL` — 프론트엔드 origin (CORS용)
+- `SESSION_SECRET` — 세션 쿠키 서명 키
+- `MONGODB_URI` — Atlas 연결 문자열
+- `ADMIN_PASSWORD_HASH` — bcrypt 해시 (관리자 로그인용)
+- `RESEND_API_KEY`, `ADMIN_EMAIL` — 관리자 로그인 알림 이메일 (선택)
+
+### 파일 업로드 — Fly Volume
+
+`/app/uploads`에 마운트된 영구 볼륨 사용. 머신 재시작/재배포에도 데이터 유지됨.
+
+- multer가 `/app/uploads`에 직접 저장
+- Express `static` 미들웨어로 서빙
+- 머신은 단일 인스턴스 운영 권장 (볼륨은 1머신 1볼륨)
+
+### 운영 명령
+
+```bash
+flyctl status -a cergy-backend           # 머신 상태
+flyctl logs -a cergy-backend             # 실시간 로그
+flyctl ssh console -a cergy-backend      # 머신 내부 접속
+flyctl machine list -a cergy-backend     # 머신 목록
+flyctl volumes list -a cergy-backend     # 볼륨 목록
+flyctl releases -a cergy-backend         # 배포 이력
+```
 
 ### 배포 체크리스트
 
-- [ ] EC2 보안 그룹에서 4000 포트 외부 차단 확인
-- [ ] nginx SSL 인증서 적용 (Let's Encrypt 또는 ACM)
-- [ ] PM2 startup 설정
-- [ ] MongoDB Atlas IP 화이트리스트에 EC2 IP 등록
-- [ ] S3 버킷 퍼블릭 접근 차단 확인
-- [ ] SSM Parameter Store에 모든 운영 환경변수 등록
-- [ ] IAM Role에 최소 권한 원칙 적용
+- [ ] `fly.toml`의 `primary_region = "nrt"` 확인
+- [ ] 모든 secrets 등록 (`flyctl secrets list`)
+- [ ] MongoDB Atlas Network Access에 `0.0.0.0/0` 허용 (Fly outbound IP 동적)
+- [ ] 볼륨이 머신과 같은 리전에 있는지 확인
+- [ ] CI 워크플로우의 `FLY_API_TOKEN` 시크릿 등록

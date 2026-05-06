@@ -7,7 +7,8 @@
 - Frontend: Next.js(App Router), TypeScript, Tailwind CSS, Mantine UI
 - Backend: Node.js + Express, MongoDB(Mongoose)
 - Auth: Passport.js (Naver OAuth, Google OAuth)
-- Storage: Vercel Blob 또는 AWS S3
+- Storage: Fly.io Volume (`/app/uploads`, 영구 디스크)
+- 배포: Vercel(프론트엔드) + Fly.io(백엔드, `nrt` 도쿄 리전)
 - 패키지 매니저: **pnpm 필수** (npm, yarn 사용 금지)
   ```bash
   pnpm install        # 의존성 설치

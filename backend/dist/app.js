@@ -42,7 +42,11 @@ app.use((0, express_session_1.default)({
         httpOnly: true,
     },
 }));
-app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '..', 'uploads')));
+app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '..', 'uploads'), {
+    setHeaders: (res) => {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
+}));
 const isTest = process.env.NODE_ENV === 'test';
 const loginLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
