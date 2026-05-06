@@ -4,7 +4,7 @@ import { Router } from 'express'
 import { z } from 'zod/v4'
 import { Instructor, PhotoTone, Day } from '../models/Instructor'
 import { requireAdmin } from '../middleware/auth'
-import { upload, UPLOAD_DIR } from '../lib/multer'
+import { UPLOAD_DIR } from '../lib/multer'
 
 export const instructorRouter = Router()
 
