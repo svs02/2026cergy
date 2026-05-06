@@ -1,7 +1,8 @@
 # Vercel + Fly.io 배포 가이드
 
 > Next.js 프론트엔드는 **Vercel**, Express 백엔드는 **Fly.io**에 배포합니다.
-> 둘 다 한국(서울) 리전이 있어서 한국 사용자 로딩 빠릅니다.
+> Vercel은 서울(`icn1`), Fly.io는 도쿄(`nrt`) 리전 사용 — 한국에서 RTT ~30ms로 충분히 빠름.
+> (Fly.io 신규 계정은 Seoul `icn` 리전이 capacity 제한으로 막혀 있어 도쿄 사용)
 > Kubernetes 없이 30분~1시간 내 배포 완료.
 
 ---
@@ -55,15 +56,17 @@ flyctl auth login
 
 ```bash
 cd backend
-flyctl launch --no-deploy
+flyctl launch --no-deploy --region nrt
 ```
+
+> **리전 선택 주의**: 신규 Fly.io 계정은 Seoul(`icn`) 리전을 못 쓰는 경우가 많습니다.
+> 사용 가능한 리전은 `flyctl platform regions`로 확인. 한국 사용자에겐 `nrt`(도쿄)가 차선책이며 RTT 차이가 거의 없습니다.
 
 대화형 프롬프트에 답변:
 
 | 질문 | 답변 |
 |---|---|
 | App name | `cergy-backend` |
-| Region | **`Seoul, South Korea (icn)`** ← 반드시 Seoul 선택 |
 | Postgres database? | **No** (MongoDB Atlas 사용 중) |
 | Redis? | **No** |
 | Deploy now? | **No** |
@@ -76,7 +79,7 @@ flyctl launch --no-deploy
 
 ```toml
 app = "cergy-backend"
-primary_region = "icn"
+primary_region = "nrt"
 
 [build]
   dockerfile = "Dockerfile"
@@ -90,7 +93,7 @@ primary_region = "icn"
   force_https = true
   auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 0   # 트래픽 없을 때 완전 정지 (비용 최소화, cold start 1~3초)
 
 [[vm]]
   cpu_kind = "shared"
@@ -107,7 +110,7 @@ primary_region = "icn"
 업로드 파일을 영구 저장하기 위한 볼륨:
 
 ```bash
-flyctl volumes create uploads_data --size 3 --region icn --yes
+flyctl volumes create uploads_data --size 3 --region nrt --yes
 ```
 
 > 무료 플랜: 3GB까지 무료. 65MB 정도면 충분.
@@ -133,11 +136,15 @@ flyctl secrets list
 
 ### 1.6 첫 배포
 
+⚠️ **모노레포 루트에서 실행**해야 합니다. Dockerfile이 `pnpm-workspace.yaml`과 `backend/` 둘 다 참조하므로 빌드 컨텍스트는 루트여야 합니다.
+
 ```bash
-flyctl deploy --remote-only
+cd /Users/luke/Desktop/PP/2026cergy   # 루트로 이동
+flyctl deploy --remote-only --config backend/fly.toml --dockerfile backend/Dockerfile
 ```
 
 > `--remote-only`: 로컬 Docker 없이 Fly의 빌더 사용. M1/M2 Mac에서 권장.
+> `backend/`에서 실행하면 `"/backend": not found` 에러가 납니다.
 
 성공하면 `https://cergy-backend.fly.dev` 같은 URL이 출력됩니다.
 
@@ -246,9 +253,9 @@ cd backend
 flyctl certs add api.cergymusic.com
 ```
 
-출력에서 DNS 설정 메모:
-- `api.cergymusic.com` → CNAME → `cergy-backend.fly.dev`
-- 또는 A 레코드 (출력에 따라)
+출력에서 DNS 설정 메모. Fly는 보통 A/AAAA 레코드(전용 IP)를 권장합니다:
+- A 레코드: `api.cergymusic.com` → `<출력된_IPv4>`
+- AAAA 레코드: `api.cergymusic.com` → `<출력된_IPv6>`
 
 ### 3.3 GoDaddy DNS 설정
 
@@ -258,9 +265,12 @@ GoDaddy 콘솔 → 도메인 관리 → DNS:
 |---|---|---|---|
 | A | `@` | `76.76.21.21` | 600 |
 | CNAME | `www` | `cname.vercel-dns.com` | 600 |
-| CNAME | `api` | `cergy-backend.fly.dev` | 600 |
+| A | `api` | `<flyctl certs add 출력의 IPv4>` | 600 |
+| AAAA | `api` | `<flyctl certs add 출력의 IPv6>` | 600 |
 
-> 기존 A 레코드(OCI IP)는 삭제. CNAME과 A는 같은 이름에 공존 불가.
+> `api` 서브도메인은 위의 A/AAAA 대신 **CNAME `api` → `cergy-backend.fly.dev`** 한 줄로도 동작합니다.
+> 차이는 DNS 조회 1번뿐 (체감 무차이). 둘 중 한 방식만 사용 — A/CNAME 공존 불가.
+> 기존 A 레코드(OCI/EC2 IP)는 모두 삭제.
 
 ### 3.4 SSL 자동 발급 확인
 
@@ -340,19 +350,26 @@ on:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
       - '.github/workflows/fly-deploy.yml'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    concurrency:
+      group: fly-deploy
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only --config backend/fly.toml --dockerfile backend/Dockerfile
-        working-directory: ./backend
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 ```
+
+> ⚠️ `working-directory` 설정하지 말 것 — Dockerfile이 모노레포 루트(`pnpm-workspace.yaml` 위치)를 빌드 컨텍스트로 사용하므로 루트에서 실행해야 함.
 
 토큰 발급 & GitHub Secret 등록:
 
@@ -457,11 +474,22 @@ app.use(session({
 
 ## 비용
 
-| 항목 | 무료 한도 | 초과 시 |
-|---|---|---|
-| Vercel Hobby | 100GB 대역폭/월, Edge 무제한 | Pro $20/월 |
-| Fly.io Free | 3개 shared-cpu VM, 3GB 볼륨 | 사용량 기준 (저트래픽 $0~5/월) |
-| MongoDB Atlas Free | 512MB | M10부터 $57/월 |
-| GoDaddy 도메인 | — | 연 $20 정도 |
+> ⚠️ Fly.io는 2024년 10월부터 신규 계정에 무료 티어가 없어졌습니다 (Free Trial만 제공: VM 2시간 또는 7일).
+> 카드 등록 후 사용량 기준 과금. 학원 사이트 수준의 저트래픽이면 월 $1~3 수준.
 
-**예상 월 비용: $0** (트래픽 적을 때)
+| 항목 | 비용 | 비고 |
+|---|---|---|
+| Vercel Hobby | 무료 | 100GB 대역폭/월, Edge 무제한, Pro 전환 시 $20/월 |
+| Fly.io 머신 (shared-cpu-1x, 512MB) | 시간당 ~$0.0044 | `min_machines_running = 0`이면 트래픽 없을 때 정지 → 거의 $0 |
+| Fly.io 볼륨 (3GB) | 월 $0.45 | $0.15/GB/월, 항상 과금 |
+| Fly.io 송신 트래픽 | 일정량 무료 | 초과 시 GB당 과금 (저트래픽이면 사실상 $0) |
+| MongoDB Atlas Free (M0) | 무료 | 512MB |
+| GoDaddy 도메인 | 연 ~$20 | — |
+
+**예상 월 비용**: **$1~3** (저트래픽 + `min_machines_running = 0` 기준, 볼륨 $0.45 + 머신 cold start 시간만 과금)
+
+### 비용 더 줄이기
+
+- `min_machines_running = 0`: 무조건 켜둘 필요 없으면 0으로. 첫 요청에 1~3초 cold start.
+- 볼륨 안 쓰면 삭제 (S3/R2로 이전): 볼륨 비용 $0.45/월 절약
+- `flyctl scale count 0`로 임시 정지 가능 (개발 중일 때)
