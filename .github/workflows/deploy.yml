@@ -1,0 +1,135 @@
+name: Build and Deploy to OKE
+
+on:
+  push:
+    branches: [main]
+
+env:
+  OCI_REGION: ap-chuncheon-1
+  OCIR_REGISTRY: yny.ocir.io
+  OCIR_NAMESPACE: ${{ secrets.OCI_TENANCY_NAMESPACE }}
+  OKE_CLUSTER_ID: ${{ secrets.OKE_CLUSTER_ID }}
+
+jobs:
+  # ────────────────────────────────────
+  # Job 1: 린트
+  # ────────────────────────────────────
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [frontend, backend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: 의존성 설치
+        run: pnpm install --frozen-lockfile --filter ${{ matrix.app }}...
+
+      - name: 린트
+        run: pnpm --filter ${{ matrix.app }} lint
+
+  # ────────────────────────────────────
+  # Job 2: Docker 이미지 빌드 & OCIR 푸시
+  # ────────────────────────────────────
+  build-push:
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [frontend, backend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker Buildx 설정
+        uses: docker/setup-buildx-action@v3
+
+      - name: OCIR 로그인
+        run: |
+          echo "${{ secrets.OCI_AUTH_TOKEN }}" | docker login \
+            ${{ env.OCIR_REGISTRY }} \
+            -u "${{ env.OCIR_NAMESPACE }}/${{ secrets.OCI_USERNAME }}" \
+            --password-stdin
+
+      - name: Backend 이미지 빌드 & 푸시
+        if: matrix.app == 'backend'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.OCIR_REGISTRY }}/${{ env.OCIR_NAMESPACE }}/cergy2026/backend:${{ github.sha }}
+            ${{ env.OCIR_REGISTRY }}/${{ env.OCIR_NAMESPACE }}/cergy2026/backend:latest
+
+      - name: Frontend 이미지 빌드 & 푸시
+        if: matrix.app == 'frontend'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://api.cergymusic.com
+          tags: |
+            ${{ env.OCIR_REGISTRY }}/${{ env.OCIR_NAMESPACE }}/cergy2026/frontend:${{ github.sha }}
+            ${{ env.OCIR_REGISTRY }}/${{ env.OCIR_NAMESPACE }}/cergy2026/frontend:latest
+
+  # ────────────────────────────────────
+  # Job 3: OKE에 배포
+  # ────────────────────────────────────
+  deploy:
+    needs: build-push
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: OKE 클러스터 연결
+        uses: oracle-actions/configure-kubectl-oke@v1.5.1
+        with:
+          cluster: ${{ env.OKE_CLUSTER_ID }}
+          region: ${{ env.OCI_REGION }}
+          tenancy: ${{ secrets.OCI_TENANCY_OCID }}
+          user: ${{ secrets.OCI_USER_OCID }}
+          fingerprint: ${{ secrets.OCI_FINGERPRINT }}
+          private_key: ${{ secrets.OCI_PRIVATE_KEY }}
+
+      - name: Kustomize 이미지 태그 업데이트
+        uses: imranismail/setup-kustomize@v2
+
+      - name: 배포
+        run: |
+          cd k8s/overlays/production
+          kustomize edit set image \
+            yny.ocir.io/NAMESPACE/cergy2026/backend=${{ env.OCIR_REGISTRY }}/${{ env.OCIR_NAMESPACE }}/cergy2026/backend:${{ github.sha }} \
+            yny.ocir.io/NAMESPACE/cergy2026/frontend=${{ env.OCIR_REGISTRY }}/${{ env.OCIR_NAMESPACE }}/cergy2026/frontend:${{ github.sha }}
+          cd ../../..
+          kubectl apply -k k8s/overlays/production/
+
+      - name: 배포 확인 & 자동 롤백
+        run: |
+          if ! kubectl rollout status deployment/backend -n production --timeout=300s; then
+            echo "Backend 배포 실패 — 롤백"
+            kubectl rollout undo deployment/backend -n production
+            kubectl rollout undo deployment/frontend -n production
+            exit 1
+          fi
+
+          if ! kubectl rollout status deployment/frontend -n production --timeout=300s; then
+            echo "Frontend 배포 실패 — 롤백"
+            kubectl rollout undo deployment/frontend -n production
+            exit 1
+          fi
+
+          echo "배포 완료!"
