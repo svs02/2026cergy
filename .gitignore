@@ -1,1 +1,19 @@
 node_modules
+.env
+.env.local
+.env*.local
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# 업로드 파일
+backend/uploads/
+
+# 빌드 결과물
+backend/dist/
+frontend/.turbo/
+
+# OS
+.DS_Store
+Thumbs.db
