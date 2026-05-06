@@ -1,0 +1,11 @@
+**/node_modules
+**/.next
+**/dist
+**/.env*
+.git
+**/*.md
+e2e
+logs
+backend/uploads
+.husky
+.github
