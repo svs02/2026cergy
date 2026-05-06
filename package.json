@@ -1,0 +1,20 @@
+{
+  "name": "cergy2026",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "build": "pnpm --parallel --filter backend --filter frontend run build",
+    "build:backend": "pnpm --filter backend run build",
+    "build:frontend": "pnpm --filter frontend run build",
+    "lint": "pnpm -r lint",
+    "test:e2e": "pnpm --filter e2e test",
+    "prepare": "husky"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "devDependencies": {
+    "husky": "^9.0.0"
+  }
+}

@@ -1,19 +1,50 @@
-node_modules
-.env
+# 환경변수 (절대 커밋 금지)
 .env.local
-.env*.local
+.env.*.local
 
-# Next.js
-frontend/.next/
-frontend/out/
-
-# 업로드 파일
-backend/uploads/
+# 의존성
+node_modules/
+**/node_modules/
 
 # 빌드 결과물
+.next/
+dist/
+build/
+out/
+frontend/.next/
+frontend/out/
 backend/dist/
 frontend/.turbo/
+
+# pnpm
+.pnpm-store/
+
+# 로그
+*.log
+npm-debug.log*
+pnpm-debug.log*
+logs/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# 에디터
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# TypeScript
+*.tsbuildinfo
+
+# 백엔드 업로드 디렉터리 (.gitkeep만 추적)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Script
+scripts/cleanup-nodepools.sh
+scripts/retry-arm-nodepool.sh
+
+# Docs
+docs/oci-deployment-guide.md
