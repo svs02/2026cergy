@@ -5,3 +5,7 @@
 .git
 **/*.md
 e2e
+logs
+backend/uploads
+.husky
+.github

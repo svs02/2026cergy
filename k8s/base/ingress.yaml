@@ -3,17 +3,17 @@ kind: Ingress
 metadata:
   name: app-ingress
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
+  ingressClassName: nginx
   tls:
     - hosts:
-        - app.yourdomain.com
-        - api.yourdomain.com
+        - cergymusic.com
+        - api.cergymusic.com
       secretName: tls-secret
   rules:
-    - host: app.yourdomain.com
+    - host: cergymusic.com
       http:
         paths:
           - path: /
@@ -23,7 +23,7 @@ spec:
                 name: frontend
                 port:
                   number: 3000
-    - host: api.yourdomain.com
+    - host: api.cergymusic.com
       http:
         paths:
           - path: /

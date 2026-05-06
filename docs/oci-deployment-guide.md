@@ -80,8 +80,13 @@
 
 ### 예상 비용
 
-- **개발/테스트**: OCI Always Free + MongoDB Atlas M0 = **완전 무료**
+- **개발/테스트 (목표)**: OCI Always Free(ARM 4 OCPU/24GB) + MongoDB Atlas M0 = **완전 무료**
+- **개발/테스트 (ARM capacity 대기 중)**: AMD E4 1 OCPU/6GB × 1노드 + Atlas M0 = **월 ~3만원**
 - **운영(소규모)**: OKE Worker Node 1~2개 + MongoDB Atlas M10 = **월 약 5~10만원**
+
+> ⚠️ **현실 체크**: 한국 리전(춘천/서울)에서 ARM 무료 티어 capacity가 부족한 경우가 많습니다.
+> AMD로 운영하면서 ARM 재시도 스크립트를 백그라운드로 돌리는 전략이 일반적입니다.
+> 자세한 내용은 [스텝 6.2](#스텝-62-worker-node-pool-만들기) 참고.
 
 ---
 
@@ -957,9 +962,9 @@ OCI 콘솔 → **Developer Services** → **Container Registry** → 2개의 레
 
 ```bash
 # OCIR에 로그인합니다
-# 서울 리전의 OCIR 주소는 icn.ocir.io 입니다
+# 서울 리전의 OCIR 주소는 yny.ocir.io 입니다
 # 사용자명 형식: <네임스페이스>/<사용자이메일>
-docker login icn.ocir.io \
+docker login yny.ocir.io \
   -u "<네임스페이스>/<사용자이메일>" \
   --password-stdin <<< "$OCI_AUTH_TOKEN"
 ```
@@ -974,28 +979,45 @@ Login Succeeded
 
 ---
 
-### 스텝 5.4: 이미지 태그 & 푸시
+### 스텝 5.4: 이미지 빌드 & 푸시
 
-> **한 줄 요약**: 빌드한 이미지에 OCIR 주소 태그를 붙이고 업로드합니다.
+> **한 줄 요약**: 멀티 플랫폼(AMD64 + ARM64) 이미지를 빌드하고 OCIR에 업로드합니다.
+
+> **왜 멀티 플랫폼인가요?**
+> Mac(Apple Silicon)에서 빌드하면 기본적으로 ARM64 이미지가 만들어집니다.
+> OKE 노드는 AMD64일 수도 있고 ARM64일 수도 있으므로, 처음부터 두 아키텍처를 모두 빌드해두면
+> 나중에 노드 타입을 바꿔도 이미지를 다시 빌드할 필요가 없습니다.
 
 **하는 방법:**
 
 ```bash
-# 변수를 먼저 설정합니다 — 자주 쓰이니까 미리 저장
 NAMESPACE=$(oci os ns get --query "data" --raw-output)
-REGION="icn.ocir.io"
+REGION="yny.ocir.io"
 
-# Frontend 이미지: 태그를 붙이고 푸시합니다
-docker tag cergy2026-frontend:latest ${REGION}/${NAMESPACE}/cergy2026/frontend:latest
-docker push ${REGION}/${NAMESPACE}/cergy2026/frontend:latest
+# buildx 멀티 플랫폼 빌더 준비 (처음 한 번만)
+docker buildx create --name multiplatform --use
+docker buildx inspect --bootstrap
 
-# Backend 이미지: 태그를 붙이고 푸시합니다
-docker tag cergy2026-backend:latest ${REGION}/${NAMESPACE}/cergy2026/backend:latest
-docker push ${REGION}/${NAMESPACE}/cergy2026/backend:latest
+# Backend: AMD64 + ARM64 동시 빌드 & 푸시
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --push \
+  -t ${REGION}/${NAMESPACE}/cergy2026/backend:latest \
+  -f backend/Dockerfile \
+  .
+
+# Frontend: AMD64 + ARM64 동시 빌드 & 푸시
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --push \
+  -t ${REGION}/${NAMESPACE}/cergy2026/frontend:latest \
+  -f frontend/Dockerfile \
+  --build-arg NEXT_PUBLIC_API_URL=http://backend:4000 \
+  .
 ```
 
-> **태그(tag)란?** 이미지의 "버전 이름"입니다. `latest`는 "최신 버전"이라는 뜻입니다.
-> CI/CD에서는 Git 커밋 해시(예: `abc1234`)를 태그로 사용해서 어떤 코드 버전인지 추적합니다.
+> **빌드 컨텍스트는 항상 프로젝트 루트(`.`)** — `pnpm-workspace.yaml`이 루트에 있어서 모노레포 의존성이 올바르게 복사됩니다.
+> **`--push` 플래그** — 멀티 플랫폼 빌드는 로컬에 저장할 수 없어서 빌드와 동시에 OCIR로 푸시합니다.
 
 **잘 됐는지 확인하기:**
 
@@ -1003,7 +1025,8 @@ OCI 콘솔 → **Developer Services** → **Container Registry** → 레포지�
 
 **문제가 생겼다면:**
 - "denied: requested access" → `docker login`을 다시 시도. 네임스페이스/사용자명이 정확한지 확인
-- "name unknown" → OCIR 레포지토리 이름과 `docker tag`의 경로가 일치하는지 확인
+- "no image found for architecture amd64" → `--platform linux/amd64,linux/arm64` 없이 빌드한 경우. 위 명령어로 재빌드 필요
+- buildx 빌더가 없다는 에러 → `docker buildx create --name multiplatform --use` 먼저 실행
 
 ---
 
@@ -1035,18 +1058,28 @@ OCI 콘솔 → **Developer Services** → **Container Registry** → 레포지�
 ```bash
 # OKE 클러스터를 만듭니다
 # 로드밸런서가 Public Subnet에 만들어지도록 설정합니다
+# API 엔드포인트도 Public Subnet에 두어 외부에서 kubectl로 접근 가능하게 합니다
 oci ce cluster create \
   --compartment-id $COMPARTMENT_ID \
   --name "cergy-cluster" \
   --vcn-id $VCN_ID \
-  --kubernetes-version "v1.29.1" \
-  --service-lb-subnet-ids "[\"$PUBLIC_SUBNET_ID\"]"
+  --kubernetes-version "v1.35.2" \
+  --service-lb-subnet-ids "[\"$PUBLIC_SUBNET_ID\"]" \
+  --endpoint-subnet-id "$PUBLIC_SUBNET_ID" \
+  --endpoint-public-ip-enabled true
 ```
 
-> ⏱️ 클러스터 생성에 **10~15분** 정도 걸립니다. OCI 콘솔에서 상태를 확인할 수 있습니다.
+> ⏱️ 클러스터 생성에 **5~10분** 정도 걸립니다. OCI 콘솔에서 상태를 확인할 수 있습니다.
 > **Developer Services** → **Kubernetes Clusters (OKE)** → 상태가 "Active"가 될 때까지 기다립니다.
 
 **결과에서 Cluster OCID를 복사해두세요** → `$CLUSTER_ID`
+
+> ⚠️ **Kubernetes 버전 주의**:
+> OCI는 각 K8s 버전을 약 14개월만 지원합니다. 가입 시점에 사용 가능한 **가장 최신 버전**을 선택하세요.
+> 사용 가능한 버전 조회: `oci ce cluster-options get --cluster-option-id all --query 'data."kubernetes-versions"'`
+>
+> 나중에 업그레이드할 때는 **마이너 버전을 건너뛸 수 없습니다**.
+> 예: v1.32 → v1.35는 불가, v1.32 → v1.33 → v1.34 → v1.35로 단계별 진행 필요.
 
 ---
 
@@ -1055,41 +1088,217 @@ oci ce cluster create \
 > **한 줄 요약**: 앱이 실제로 실행될 서버(VM)들을 만듭니다.
 > **쉽게 말하면**: 클러스터(두뇌)에게 "일할 직원"을 배정하는 것입니다.
 
-**하는 방법:**
+#### 6.2.1: 노드 이미지(OS) ID 조회
+
+Node Pool 생성 시 **워커 노드용 OKE 빌드 이미지**가 반드시 필요합니다(`--node-source-details`).
+일반 Compute 이미지가 아니라 **OKE 워커 노드 전용 이미지**여야 합니다.
 
 ```bash
-# Worker Node Pool을 만듭니다
-# 이 VM들에서 실제로 컨테이너가 실행됩니다
+# 사용하려는 K8s 버전(v1.35.2)에 맞는 OKE 이미지 목록 조회
+# AMD(x86_64): aarch64 와 GPU 가 들어간 이름 제외
+# 주의: zsh에서 ! 가 history expansion으로 해석되지 않도록 외부는 작은따옴표 사용
+oci ce node-pool-options get \
+  --node-pool-option-id $CLUSTER_ID \
+  --query 'data.sources[?contains("source-name", `1.35.2`) && !contains("source-name", `aarch64`) && !contains("source-name", `GPU`)]'
+
+# ARM(aarch64): aarch64가 들어간 이름만
+oci ce node-pool-options get \
+  --node-pool-option-id $CLUSTER_ID \
+  --query 'data.sources[?contains("source-name", `1.35.2`) && contains("source-name", `aarch64`)]'
+```
+
+위 결과에서 가장 최신 빌드의 `image-id`를 복사해서 `--node-source-details` 에 사용합니다.
+
+> 💡 **zsh `event not found` 에러가 나는 경우**:
+> JMESPath 쿼리 안에 `!`(NOT 연산자)가 있을 때 발생합니다.
+> 위처럼 **외부는 작은따옴표(`'`), JMESPath literal은 백틱(`` ` ``)** 으로 감싸면 해결됩니다.
+
+#### 6.2.2: ⚠️ ARM 무료 티어의 현실 — 먼저 읽어보세요
+
+**Always Free 티어 ARM(`VM.Standard.A1.Flex`)은 4 OCPU / 24GB가 무료**라서 매력적이지만,
+**한국 리전(춘천/서울)에서는 ARM capacity 부족이 매우 흔합니다.**
+
+```
+"2 node(s) need be provisioned, 0 node(s) provisioning"
+"Validating nodes: 0 provisioned, 0 provisioning, 2 remaining" × 10번 반복
+"Work request exceeded max retry count" → FAILED
+```
+
+이런 패턴이 보이면 **OCI에 ARM 호스트가 비어있지 않은 상태**입니다. 즉시 풀리지 않으며 며칠 걸릴 수도 있습니다.
+
+**대응 전략 3가지:**
+
+| 전략 | 비용 | 즉시 가능? | 추천 |
+|------|------|-----------|------|
+| **A. AMD 작은 노드로 시작 → ARM 풀리면 마이그레이션** | 월 ~3만원 → $0 | ✅ | ⭐⭐⭐⭐⭐ |
+| **B. ARM 재시도 스크립트만 돌리기 (며칠 ~ 1주)** | 무료 | ❌ (대기) | ⭐⭐⭐ |
+| **C. AMD 그대로 운영 (작은 사이즈)** | 월 ~3~5만원 | ✅ | ⭐⭐⭐ (학습 목적) |
+
+이 가이드는 **A 전략(AMD로 시작, ARM 마이그레이션)** 을 권장합니다.
+
+#### 6.2.3: AMD 노드 풀 생성 (즉시 운영 시작)
+
+가장 저렴한 운영 가능 사양 — **1 OCPU / 6GB × 1노드 (월 약 $25)**:
+
+```bash
+# Availability Domain 조회
+AD=$(oci iam availability-domain list \
+  --compartment-id $TENANCY_OCID \
+  --query "data[0].name" --raw-output)
+
+# AMD x86_64 OKE 이미지 ID (위 6.2.1에서 조회한 값으로 교체)
+AMD_IMAGE_ID="ocid1.image.oc1.ap-chuncheon-1.aaaaaaaa..."
+
 oci ce node-pool create \
   --compartment-id $COMPARTMENT_ID \
   --cluster-id $CLUSTER_ID \
-  --name "cergy-node-pool" \
-  --kubernetes-version "v1.29.1" \
+  --name "cergy-amd-pool" \
+  --kubernetes-version "v1.35.2" \
   --node-shape "VM.Standard.E4.Flex" \
-  --node-shape-config '{"ocpus":2,"memoryInGBs":16}' \
-  --size 2 \
-  --placement-configs "[{\"availabilityDomain\":\"$AD\",\"subnetId\":\"$APP_SUBNET_ID\"}]"
+  --node-shape-config '{"ocpus":1,"memoryInGBs":6}' \
+  --node-source-details "{\"sourceType\":\"IMAGE\",\"imageId\":\"$AMD_IMAGE_ID\"}" \
+  --size 1 \
+  --placement-configs "[{\"availabilityDomain\":\"$AD\",\"subnetId\":\"$APP_SUBNET_ID\"}]" \
+  --wait-for-state SUCCEEDED \
+  --wait-for-state FAILED
 ```
 
-> **$AD (Availability Domain)은 어디서 찾나요?**
-> ```bash
-> # 사용 가능한 Availability Domain 목록을 조회합니다
-> oci iam availability-domain list --compartment-id $TENANCY_OCID --query "data[0].name" --raw-output
-> ```
-
-> ⏱️ Node Pool 생성에 **5~10분** 걸립니다.
+> ⏱️ AMD는 capacity 문제가 거의 없어서 **5~10분 안에 SUCCEEDED**가 나옵니다.
 
 **설정값 설명:**
 
 | 설정 | 값 | 의미 |
 |------|-----|------|
 | `node-shape` | VM.Standard.E4.Flex | AMD 기반 가성비 좋은 VM |
-| `ocpus` | 2 | CPU 2코어 |
-| `memoryInGBs` | 16 | 메모리 16GB |
-| `size` | 2 | VM 2대 (고가용성) |
+| `ocpus` | 1 | CPU 1코어 (개발용 최소) |
+| `memoryInGBs` | 6 | OKE 워커 최소 권장 |
+| `size` | 1 | VM 1대 (개발/소규모 운영) |
+| `--wait-for-state` | SUCCEEDED \| FAILED | 끝날 때까지 자동 대기 |
 
-> 💡 **비용 절약 팁**: 개발 환경에서는 `VM.Standard.A1.Flex` (ARM) + Always Free Tier로
-> 4 OCPU / 24GB 메모리를 **무료**로 사용할 수 있습니다!
+#### 6.2.4: ARM 노드 풀 생성 시도 (병렬 진행)
+
+AMD 노드 풀이 만들어지는 동안 (또는 만들어진 후) **ARM 무료 티어를 백그라운드에서 계속 재시도**해두세요.
+프로젝트 루트에 다음 스크립트를 만들어둡니다:
+
+`scripts/retry-arm-nodepool.sh`:
+
+```bash
+#!/bin/bash
+# ARM A1.Flex 노드 풀 생성 재시도 스크립트
+# Out of capacity 에러가 풀릴 때까지 5분마다 재시도
+
+COMPARTMENT_ID="ocid1.compartment.oc1..xxx"
+CLUSTER_ID="ocid1.cluster.oc1.ap-chuncheon-1.xxx"
+IMAGE_ID="<6.2.1에서 조회한 ARM aarch64 이미지 ID>"
+SUBNET_ID="ocid1.subnet.oc1.ap-chuncheon-1.xxx"  # App(Private) Subnet
+AVAILABILITY_DOMAIN="<AD 이름>"
+K8S_VERSION="v1.35.2"
+
+ATTEMPT=0
+while true; do
+  ATTEMPT=$((ATTEMPT + 1))
+  echo "[$(date +%H:%M:%S)] 시도 #$ATTEMPT 시작..."
+
+  RESULT=$(oci ce node-pool create \
+    --compartment-id "$COMPARTMENT_ID" \
+    --cluster-id "$CLUSTER_ID" \
+    --name "cergy-arm-pool" \
+    --kubernetes-version "$K8S_VERSION" \
+    --node-shape "VM.Standard.A1.Flex" \
+    --node-shape-config '{"ocpus":2,"memoryInGBs":12}' \
+    --node-source-details "{\"sourceType\":\"IMAGE\",\"imageId\":\"$IMAGE_ID\"}" \
+    --size 2 \
+    --placement-configs "[{\"availabilityDomain\":\"$AVAILABILITY_DOMAIN\",\"subnetId\":\"$SUBNET_ID\"}]" \
+    --wait-for-state SUCCEEDED \
+    --wait-for-state FAILED \
+    2>&1)
+
+  if echo "$RESULT" | grep -q '"status": "SUCCEEDED"'; then
+    echo "✅ 성공! ARM 노드 풀 생성 완료"
+    echo "$RESULT"
+    break
+  fi
+
+  echo "[$(date +%H:%M:%S)] 실패. 5분 후 재시도..."
+  sleep 300
+done
+```
+
+백그라운드 실행:
+
+```bash
+chmod +x scripts/retry-arm-nodepool.sh
+mkdir -p logs
+nohup ./scripts/retry-arm-nodepool.sh > logs/arm-retry.log 2>&1 &
+echo $! > logs/arm-retry.pid
+echo "✅ PID: $(cat logs/arm-retry.pid)"
+
+# 진행 상황 확인
+tail -f logs/arm-retry.log
+
+# 중단하고 싶을 때
+kill $(cat logs/arm-retry.pid)
+```
+
+> ⚠️ **노트북 절전/종료 시 스크립트 멈춤**. 가능하면 켜둔 채로 두세요.
+> 24시간 이상 안 풀리면 다른 리전(도쿄 `ap-tokyo-1` 등) 시도 고려.
+
+#### 6.2.5: ARM 풀리면 마이그레이션 (며칠 후)
+
+ARM 노드 풀이 ACTIVE 되면 다음 순서로 AMD에서 ARM으로 워크로드를 옮깁니다:
+
+**1단계: 이미지 확인**
+
+스텝 5.4에서 `--platform linux/amd64,linux/arm64`로 빌드했다면 이미지 재빌드 불필요.
+AMD-only로 빌드했다면 스텝 5.4 명령어로 재빌드 후 푸시.
+
+**2단계: Deployment에 ARM 우선 nodeSelector 추가**
+
+`k8s/base/backend-deployment.yaml`, `k8s/base/frontend-deployment.yaml`에 다음 추가:
+
+```yaml
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64   # ARM 노드에만 스케줄
+```
+
+적용:
+
+```bash
+kubectl apply -k k8s/overlays/production
+kubectl rollout status deployment/backend -n production
+kubectl rollout status deployment/frontend -n production
+```
+
+새 Pod이 모두 ARM 노드에 뜨고 Ready 확인:
+
+```bash
+kubectl get pods -n production -o wide
+# 노드 이름 보고 ARM 노드인지 확인
+kubectl get nodes -L kubernetes.io/arch
+```
+
+**3단계: AMD 노드 풀 삭제 (월 비용 → $0)**
+
+```bash
+oci ce node-pool delete \
+  --node-pool-id <AMD 노드풀 OCID> \
+  --force
+```
+
+→ 이 시점부터 **월 $25 → $0**, 완전 무료 운영 시작 ✅
+
+#### 6.2.6: ⚠️ 흔한 에러 모음
+
+| 에러 메시지 | 원인 | 해결 |
+|------------|------|------|
+| `Invalid nodeSourceDetails` | `--node-source-details` 누락 | 6.2.1로 이미지 ID 조회 후 추가 |
+| `Invalid nodeShape: Node shape and image are not compatible` | shape와 이미지 아키텍처 불일치 | E4=AMD x86_64 / A1=ARM aarch64. 이미지 이름 재확인 |
+| `Out of host capacity for shape A1.Flex` | ARM capacity 부족 | 6.2.4 재시도 스크립트 사용 |
+| `Work request exceeded max retry count` | 위와 동일 | 위와 동일 |
+| `Node pool ... still has new or running job` | 이전 작업 진행 중 | `oci ce work-request get`으로 SUCCEEDED 대기 후 재시도 |
 
 ---
 
@@ -1102,11 +1311,13 @@ oci ce node-pool create \
 
 ```bash
 # kubeconfig 파일을 생성합니다 — kubectl이 이 파일을 보고 어디에 연결할지 압니다
+# --region은 클러스터를 만든 리전과 동일해야 합니다 (예: ap-chuncheon-1, ap-seoul-1, ap-tokyo-1)
 oci ce cluster create-kubeconfig \
   --cluster-id $CLUSTER_ID \
   --file ~/.kube/config \
-  --region ap-seoul-1 \
-  --token-version 2.0.0
+  --region ap-chuncheon-1 \
+  --token-version 2.0.0 \
+  --kube-endpoint PUBLIC_ENDPOINT
 ```
 
 **잘 됐는지 확인하기:**
@@ -1118,9 +1329,10 @@ kubectl get nodes
 → 이런 결과가 나오면 성공:
 ```
 NAME           STATUS   ROLES   AGE   VERSION
-10.0.2.10      Ready    node    5m    v1.29.1
-10.0.2.11      Ready    node    5m    v1.29.1
+10.0.2.10      Ready    node    5m    v1.35.2
 ```
+
+> 노드 1개(AMD)만 보일 수 있습니다. ARM 노드 풀이 나중에 만들어지면 자동으로 추가됩니다.
 
 > STATUS가 모두 **Ready**여야 합니다. "NotReady"면 몇 분 더 기다려주세요.
 
@@ -1209,7 +1421,7 @@ kubectl get namespaces
 # OKE가 OCIR에서 이미지를 가져올 때 사용할 인증 정보를 등록합니다
 kubectl create secret docker-registry ocir-secret \
   -n production \
-  --docker-server=icn.ocir.io \
+  --docker-server=yny.ocir.io \
   --docker-username="<네임스페이스>/<사용자이메일>" \
   --docker-password="$OCI_AUTH_TOKEN" \
   --docker-email="your@email.com"
@@ -1237,12 +1449,31 @@ kubectl create secret generic app-secrets \
 
 ```bash
 # 일반 환경변수를 ConfigMap으로 만듭니다
+# ⚠️ 도메인 연결 전이라면 CORS_ORIGIN을 "*"로 설정하세요 (아래 참고)
 kubectl create configmap app-config \
   -n production \
   --from-literal=NODE_ENV=production \
   --from-literal=PORT=4000 \
-  --from-literal=CORS_ORIGIN=https://app.yourdomain.com
+  --from-literal=CORS_ORIGIN="*"
 ```
+
+> **도메인이 있지만 아직 연결하지 않은 경우**
+>
+> 지금 단계에서는 LoadBalancer IP가 아직 발급되지 않았고, 도메인 A 레코드도 설정하지 않았습니다.
+> `CORS_ORIGIN`에 실제 도메인을 넣어도 현재는 동작하지 않으므로 `"*"`로 임시 설정합니다.
+>
+> 파트 8에서 LoadBalancer IP 발급 → 도메인 A 레코드 설정을 완료한 후, 아래 명령어로 업데이트하세요:
+>
+> ```bash
+> kubectl create configmap app-config \
+>   -n production \
+>   --from-literal=NODE_ENV=production \
+>   --from-literal=PORT=4000 \
+>   --from-literal=CORS_ORIGIN="https://yourdomain.com" \
+>   --dry-run=client -o yaml | kubectl apply -f -
+> ```
+>
+> `--dry-run=client -o yaml | kubectl apply -f -` 패턴은 이미 존재하는 ConfigMap을 **덮어쓸 때** 사용합니다.
 
 ---
 
@@ -1280,7 +1511,7 @@ spec:
       containers:
         - name: backend
           # IMAGE_TAG는 CI/CD에서 Git 커밋 해시로 치환됩니다
-          image: icn.ocir.io/NAMESPACE/cergy2026/backend:IMAGE_TAG
+          image: yny.ocir.io/NAMESPACE/cergy2026/backend:IMAGE_TAG
           ports:
             - containerPort: 4000
           # 환경변수: ConfigMap에서 가져오기
@@ -1375,7 +1606,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: icn.ocir.io/NAMESPACE/cergy2026/frontend:IMAGE_TAG
+          image: yny.ocir.io/NAMESPACE/cergy2026/frontend:IMAGE_TAG
           ports:
             - containerPort: 3000
           resources:
@@ -1807,7 +2038,7 @@ on:
 # 공통 환경변수
 env:
   OCI_REGION: ap-seoul-1
-  OCIR_REGISTRY: icn.ocir.io
+  OCIR_REGISTRY: yny.ocir.io
   OCIR_NAMESPACE: ${{ secrets.OCI_TENANCY_NAMESPACE }}
   OKE_CLUSTER_ID: ${{ secrets.OKE_CLUSTER_ID }}
 
@@ -2271,10 +2502,16 @@ Allow group admin-group to manage all-resources in compartment cergy2026
 | 항목 | 전략 | 절감 효과 |
 |------|------|----------|
 | dev DB | MongoDB Atlas M0 (Free Tier) | 무료 |
-| dev OKE Worker | ARM(Ampere) Always Free (4 OCPU, 24GB) | 무료 |
+| dev OKE Worker (목표) | ARM(Ampere) Always Free (4 OCPU, 24GB) | **무료** |
+| dev OKE Worker (대기 중) | AMD E4.Flex 1 OCPU/6GB × 1노드 | 월 ~3만원 (임시) |
 | prod OKE Worker | Preemptible Instance (비핵심 워크로드용) | 50% 절감 |
 | Container Image | 멀티 스테이지 빌드 + Alpine 베이스 (이미 적용됨) | 이미지 크기 80% 감소 |
 | Reserved Instance | 1년 약정 (prod Worker Node) | 30~50% 절감 |
+| 멀티아키 빌드 | `docker buildx --platform linux/amd64,linux/arm64` | ARM 마이그레이션 무중단 |
+
+> 💡 **ARM 무료 티어 전략**:
+> 한국 리전은 ARM capacity 부족이 흔합니다. **AMD로 시작 → ARM 풀리면 마이그레이션**이 현실적입니다.
+> 자세한 절차는 [스텝 6.2](#스텝-62-worker-node-pool-만들기) 참고.
 
 ---
 

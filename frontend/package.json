@@ -18,6 +18,7 @@
     "@mantine/hooks": "^8.0.0",
     "@mantine/notifications": "^8.0.0",
     "@tabler/icons-react": "^3.31.0",
+    "browser-image-compression": "^2.0.2",
     "dayjs": "^1.11.13",
     "next": "^15.3.1",
     "react": "^19.1.0",

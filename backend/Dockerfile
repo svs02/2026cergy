@@ -10,19 +10,17 @@ FROM base AS deps
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY backend/package.json ./backend/
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --filter backend...
+    pnpm install --frozen-lockfile --ignore-scripts --filter backend...
 
 # ── 3단계: 빌드 (TypeScript → JavaScript) ──
 FROM deps AS builder
 COPY backend ./backend
 RUN pnpm --filter backend build
 
-# ── 4단계: production 의존성만 ──
-FROM base AS prod-deps
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
-COPY backend/package.json ./backend/
+# ── 4단계: pnpm deploy로 production 번들 생성 ──
+FROM deps AS deploy
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --filter backend... --prod
+    pnpm --filter backend deploy --prod --legacy /repo/deploy
 
 # ── 5단계: 실행 ──
 FROM node:20-alpine AS runner
@@ -33,7 +31,7 @@ RUN addgroup --system --gid 1001 nodejs \
     && adduser --system --uid 1001 expressjs
 
 COPY --from=builder --chown=expressjs:nodejs /repo/backend/dist ./dist
-COPY --from=prod-deps --chown=expressjs:nodejs /repo/backend/node_modules ./node_modules
+COPY --from=deploy --chown=expressjs:nodejs /repo/deploy/node_modules ./node_modules
 COPY --from=builder --chown=expressjs:nodejs /repo/backend/package.json ./
 
 RUN mkdir -p /app/uploads && chown expressjs:nodejs /app/uploads

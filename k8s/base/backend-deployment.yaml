@@ -19,7 +19,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: icn.ocir.io/NAMESPACE/cergy2026/backend:IMAGE_TAG
+          image: yny.ocir.io/NAMESPACE/cergy2026/backend:IMAGE_TAG
+          imagePullPolicy: Always
           ports:
             - containerPort: 4000
           env:
@@ -38,6 +39,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: CORS_ORIGIN
+            - name: CLIENT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: CLIENT_URL
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
@@ -48,6 +54,11 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: SESSION_SECRET
+            - name: ADMIN_PASSWORD_HASH
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: ADMIN_PASSWORD_HASH
           resources:
             requests:
               cpu: 250m

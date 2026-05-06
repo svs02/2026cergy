@@ -10,8 +10,10 @@ import {
   Button,
   Stack,
   Group,
+  Text,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import imageCompression from 'browser-image-compression'
 import {
   DndContext,
   PointerSensor,
@@ -61,6 +63,56 @@ const UPLOAD_CATEGORIES = [
 ] as const
 
 const VIDEO_ACCEPT = 'image/*,video/mp4,video/webm,video/quicktime'
+
+const IMAGE_COMPRESS_OPTIONS = {
+  maxSizeMB: 1,
+  maxWidthOrHeight: 2048,
+  useWebWorker: true,
+  fileType: 'image/webp',
+  initialQuality: 0.82,
+} as const
+
+const VIDEO_MAX_SIZE_MB = 50
+const VIDEO_MAX_DURATION_SEC = 60
+
+async function compressImageIfNeeded(file: File): Promise<File> {
+  if (file.type === 'image/gif') {
+    return file
+  }
+  if (!file.type.startsWith('image/')) {
+    return file
+  }
+  const compressed = await imageCompression(file, IMAGE_COMPRESS_OPTIONS)
+  const newName = file.name.replace(/\.[^.]+$/, '.webp')
+  return new File([compressed], newName, { type: compressed.type })
+}
+
+function getVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(video.src)
+      resolve(video.duration)
+    }
+    video.onerror = () => {
+      URL.revokeObjectURL(video.src)
+      reject(new Error('동영상 메타데이터를 읽지 못했습니다'))
+    }
+    video.src = URL.createObjectURL(file)
+  })
+}
+
+async function validateVideo(file: File): Promise<void> {
+  const sizeMB = file.size / (1024 * 1024)
+  if (sizeMB > VIDEO_MAX_SIZE_MB) {
+    throw new Error(`동영상은 최대 ${VIDEO_MAX_SIZE_MB}MB까지 업로드 가능합니다`)
+  }
+  const duration = await getVideoDuration(file)
+  if (duration > VIDEO_MAX_DURATION_SEC) {
+    throw new Error(`동영상은 최대 ${VIDEO_MAX_DURATION_SEC}초까지 업로드 가능합니다`)
+  }
+}
 
 function generateVideoThumbnail(file: File): Promise<Blob | null> {
   return new Promise((resolve) => {
@@ -687,12 +739,27 @@ interface UploadModalProps {
   onUploaded: () => void
 }
 
+const UploadStep = {
+  IDLE: 'IDLE',
+  COMPRESSING: 'COMPRESSING',
+  UPLOADING: 'UPLOADING',
+} as const
+type UploadStep = (typeof UploadStep)[keyof typeof UploadStep]
+
+const STEP_LABEL: Record<UploadStep, string> = {
+  [UploadStep.IDLE]: '',
+  [UploadStep.COMPRESSING]: '이미지를 압축하는 중...',
+  [UploadStep.UPLOADING]: '서버로 업로드하는 중...',
+}
+
 function UploadModal({ open, onClose, onUploaded }: UploadModalProps) {
   const [file, setFile] = useState<File | null>(null)
   const [category, setCategory] = useState<GalleryCategory>(GalleryCategory.SPACE)
   const [caption, setCaption] = useState('')
   const [featured, setFeatured] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [step, setStep] = useState<UploadStep>(UploadStep.IDLE)
+
+  const uploading = step !== UploadStep.IDLE
 
   const reset = () => {
     setFile(null)
@@ -706,15 +773,23 @@ function UploadModal({ open, onClose, onUploaded }: UploadModalProps) {
       notifications.show({ title: '파일이 필요합니다', message: '파일을 선택해 주세요.', color: 'red' })
       return
     }
-    setUploading(true)
     try {
+      let payloadFile = file
       let thumbnail: Blob | undefined
+
       if (file.type.startsWith('video/')) {
+        await validateVideo(file)
+        setStep(UploadStep.UPLOADING)
         const generated = await generateVideoThumbnail(file)
         thumbnail = generated ?? undefined
+      } else {
+        setStep(UploadStep.COMPRESSING)
+        payloadFile = await compressImageIfNeeded(file)
+        setStep(UploadStep.UPLOADING)
       }
+
       await uploadGalleryMedia(
-        file,
+        payloadFile,
         {
           category,
           caption: caption.length > 0 ? caption : undefined,
@@ -732,7 +807,7 @@ function UploadModal({ open, onClose, onUploaded }: UploadModalProps) {
         color: 'red',
       })
     } finally {
-      setUploading(false)
+      setStep(UploadStep.IDLE)
     }
   }
 
@@ -778,6 +853,11 @@ function UploadModal({ open, onClose, onUploaded }: UploadModalProps) {
           checked={featured}
           onChange={(event) => setFeatured(event.currentTarget.checked)}
         />
+        {uploading ? (
+          <Text c="dimmed" fz="sm">
+            {STEP_LABEL[step]}
+          </Text>
+        ) : null}
         <Group justify="flex-end">
           <Button
             variant="subtle"
@@ -785,6 +865,7 @@ function UploadModal({ open, onClose, onUploaded }: UploadModalProps) {
               reset()
               onClose()
             }}
+            disabled={uploading}
           >
             취소
           </Button>

@@ -39,7 +39,7 @@ export const upload = multer({
 
 export const galleryUpload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 55 * 1024 * 1024 },
   fileFilter: (_req, file, callback) => {
     if (!ALLOWED_MEDIA_MIME.has(file.mimetype)) {
       callback(new Error('허용되지 않는 파일 형식입니다'))

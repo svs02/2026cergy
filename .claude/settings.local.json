@@ -49,7 +49,8 @@
       "Bash(npx -y node -e 'require\\(\"\"bcryptjs\"\"\\).hash\\(\"\"test-admin\"\", 10\\).then\\(h => console.log\\(h\\)\\)')",
       "Bash(source ~/.nvm/nvm.sh)",
       "Bash(nvm use:*)",
-      "Bash(pnpm --filter e2e test)"
+      "Bash(pnpm --filter e2e test)",
+      "Bash(echo \"---EXIT:$?\")"
     ]
   }
 }
