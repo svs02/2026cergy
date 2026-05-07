@@ -33,6 +33,8 @@ app.use(
   })
 )
 
+const isProduction = process.env.NODE_ENV === 'production'
+
 app.use(
   session({
     secret: env.SESSION_SECRET,
@@ -41,9 +43,10 @@ app.use(
     store: MongoStore.create({ mongoUrl: env.MONGODB_URI }),
     cookie: {
       maxAge: 1000 * 60 * 60 * 24,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
       httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      ...(isProduction && env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
     },
   })
 )
