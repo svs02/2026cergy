@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { TOKENS } from '@/lib/tokens'
 import { useDrawer } from './DrawerContext'
 import { useAdmin } from './AdminContext'
-import { IconBrandInstagram, IconLetterC, IconPhone } from '@tabler/icons-react'
+import { IconBrandInstagram, IconPhone } from '@tabler/icons-react'
 import { CloseIcon } from './Icons'
 import { useLongPress } from '@/hooks/useLongPress'
 

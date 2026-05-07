@@ -65,7 +65,6 @@ const FALLBACK_GALLERY = [
 
 export default async function HomePage() {
   const { notices, gallery, instructors } = await fetchHomeData()
-  const eventCount = notices.filter((notice) => notice.tag === 'EVENT').length
   const previewInstructors = instructors.length > 0
     ? instructors
     : FALLBACK_INSTRUCTORS.map((item) => ({ ...item, photoUrl: undefined }))

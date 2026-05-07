@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { notifications } from '@mantine/notifications'
 import {
   DndContext,
@@ -32,7 +31,6 @@ import { PageHeader } from '@/components/PageHeader'
 import { Display } from '@/components/Display'
 import { GoldRule } from '@/components/GoldRule'
 import { Photo } from '@/components/Photo'
-import { ArrowIcon, TrashIcon } from '@/components/Icons'
 import { useAdmin } from '@/components/AdminContext'
 
 const primaryBtnStyle: React.CSSProperties = {
@@ -362,7 +360,6 @@ function SortableInstructorRow({
 }
 
 export default function InstructorsPage() {
-  const router = useRouter()
   const { isAdmin } = useAdmin()
   const [items, setItems] = useState<InstructorItem[]>([])
   const [loading, setLoading] = useState(true)

@@ -6,7 +6,7 @@
 ## 기술 스택
 - Frontend: Next.js(App Router), TypeScript, Tailwind CSS, Mantine UI
 - Backend: Node.js + Express, MongoDB(Mongoose)
-- Auth: Passport.js (Naver OAuth, Google OAuth)
+- Auth: 관리자 비밀번호 로그인 (bcrypt + express-session)
 - Storage: Fly.io Volume (`/app/uploads`, 영구 디스크)
 - 배포: Vercel(프론트엔드) + Fly.io(백엔드, `nrt` 도쿄 리전)
 - 패키지 매니저: **pnpm 필수** (npm, yarn 사용 금지)
