@@ -51,7 +51,10 @@
       "Bash(nvm use:*)",
       "Bash(pnpm --filter e2e test)",
       "Bash(echo \"---EXIT:$?\")",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(grep -r \"\\\\$2b\\\\$\" /Users/luke/Desktop/PP/2026cergy --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.example\")",
+      "Bash(grep -r \"2b\\\\$10\" /Users/luke/Desktop/PP/2026cergy --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.local*\")",
+      "Bash(flyctl secrets *)"
     ]
   }
 }
