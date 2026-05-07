@@ -209,6 +209,22 @@ export async function deleteGalleryImage(id: string): Promise<{ ok: true }> {
   })
 }
 
+export interface GalleryUpdatePayload {
+  category?: GalleryCategory
+  caption?: string
+  featured?: boolean
+}
+
+export async function updateGalleryImage(
+  id: string,
+  payload: GalleryUpdatePayload,
+): Promise<GalleryItem> {
+  return apiFetch<GalleryItem>(`/api/gallery/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
 export async function reorderGallery(orderedIds: string[]): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>('/api/gallery/reorder', {
     method: 'PATCH',
