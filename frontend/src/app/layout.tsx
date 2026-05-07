@@ -32,8 +32,8 @@ const notoSansKr = Noto_Sans_KR({
 })
 
 export const metadata: Metadata = {
-  title: 'Cergy Music Atelier',
-  description: '바이올린 학원 — 도심 속 작은 살롱에서, 천천히 한 음씩.',
+  title: 'Cergy Music Academy',
+  description: '음악 학원 — 편안한 분위기에서, 음악을 통해 성장합니다.',
 }
 
 export const viewport: Viewport = {

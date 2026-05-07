@@ -19,7 +19,6 @@ import { SectionHead } from '@/components/SectionHead'
 import { Photo } from '@/components/Photo'
 import { ArrowIcon, MapIcon, PhoneIcon, PlayIcon } from '@/components/Icons'
 import { HomeHeader } from '@/components/HomeHeader'
-import { NaverMap } from '@/components/NaverMap'
 
 export const dynamic = 'force-dynamic'
 
@@ -488,16 +487,16 @@ export default async function HomePage() {
               address: '인천광역시 미추홀구 숙골로 104 YG프라자 202호',
               phone: '0507-1479-3133',
               mapUrl: 'https://naver.me/xVBn7rw0',
-              lat: 37.4490,
-              lng: 126.6530,
+              image: '/image/도화본점.png',
+              imageAlt: '도화본원 전경',
             },
             {
               name: '동인천점',
               address: '인천광역시 동구 화도진로 16 동인천역 파크푸르지오 상가 205호',
               phone: '0507-1479-3134',
               mapUrl: 'https://naver.me/F6lfEZsV',
-              lat: 37.4735,
-              lng: 126.6432,
+              image: '/image/동인천점.png',
+              imageAlt: '동인천점 전경',
             },
           ].map((branch) => (
             <div
@@ -519,9 +518,31 @@ export default async function HomePage() {
               >
                 {branch.name}
               </div>
-              <div style={{ marginBottom: 14 }}>
-                <NaverMap latitude={branch.lat} longitude={branch.lng} height={160} label={`${branch.name} 위치 지도`} mapUrl={branch.mapUrl} />
-              </div>
+              <a
+                href={branch.mapUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${branch.name} 네이버 지도 열기`}
+                style={{
+                  position: 'relative',
+                  display: 'block',
+                  width: '100%',
+                  height: 160,
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  marginBottom: 14,
+                  background: '#e8e8e8',
+                  cursor: 'pointer',
+                }}
+              >
+                <Image
+                  src={branch.image}
+                  alt={branch.imageAlt}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  style={{ objectFit: 'cover' }}
+                />
+              </a>
               <a
                 href={branch.mapUrl}
                 target="_blank"
