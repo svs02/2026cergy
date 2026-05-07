@@ -101,7 +101,7 @@ export function DrawerMenu() {
             onPointerCancel={isAdmin ? undefined : onPointerCancel}
             onContextMenu={isAdmin ? undefined : (event) => event.preventDefault()}
             style={{
-              fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+              fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
               fontStyle: 'italic',
               fontSize: 24,
               color: TOKENS.bg,
@@ -135,7 +135,7 @@ export function DrawerMenu() {
             >
               <div
                 style={{
-                  fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+                  fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
                   fontStyle: 'italic',
                   fontSize: 22,
                   color: active ? TOKENS.goldBright : TOKENS.bg,

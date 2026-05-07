@@ -180,7 +180,7 @@ function InstructorCard({
               marginTop: 18,
               padding: '14px 16px',
               borderLeft: `2px solid ${TOKENS.gold}`,
-              fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+              fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
               fontStyle: 'italic',
               fontSize: 16,
               color: TOKENS.green,

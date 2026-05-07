@@ -21,7 +21,8 @@ export function Display({
   return (
     <div
       style={{
-        fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+        fontFamily:
+          "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
         fontWeight,
         fontStyle: italic ? 'italic' : 'normal',
         fontSize: size,

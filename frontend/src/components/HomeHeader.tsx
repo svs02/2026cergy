@@ -46,7 +46,7 @@ export function HomeHeader() {
           />
           <div
             style={{
-              fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+              fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
               fontStyle: 'italic',
               fontSize: 22,
               color: TOKENS.ink,
