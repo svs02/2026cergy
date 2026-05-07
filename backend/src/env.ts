@@ -29,4 +29,5 @@ export const env = {
   RESEND_API_KEY: process.env.RESEND_API_KEY ?? '',
   ADMIN_EMAIL: process.env.ADMIN_EMAIL ?? '',
   ADMIN_NOTIFICATION_FROM: process.env.ADMIN_NOTIFICATION_FROM ?? 'onboarding@resend.dev',
+  COOKIE_DOMAIN: process.env.COOKIE_DOMAIN ?? '',
 }
