@@ -866,6 +866,8 @@ function UploadModal({ open, onClose, onUploaded }: UploadModalProps) {
         onClose()
       }}
       title="미디어 업로드"
+      closeOnClickOutside={false}
+      closeOnEscape={false}
     >
       <Stack>
         <FileButton onChange={setFile} accept={VIDEO_ACCEPT}>
@@ -976,6 +978,8 @@ function EditModal({ item, onClose, onSaved }: EditModalProps) {
       opened={item !== null}
       onClose={onClose}
       title="갤러리 수정"
+      closeOnClickOutside={false}
+      closeOnEscape={false}
     >
       <Stack>
         <Select
