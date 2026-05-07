@@ -31,6 +31,12 @@ const reorderSchema = z.strictObject({
   orderedIds: z.array(z.string().min(1)).min(1).max(500),
 })
 
+const updateGallerySchema = z.strictObject({
+  category: z.enum(galleryCategoryValues).optional(),
+  caption: z.string().optional(),
+  featured: z.boolean().optional(),
+})
+
 galleryRouter.get('/', async (req, res, next) => {
   try {
     const category = typeof req.query.category === 'string' ? req.query.category : undefined
@@ -113,6 +119,26 @@ galleryRouter.patch('/reorder', requireAdmin, async (req, res, next) => {
     }
 
     res.json({ ok: true })
+  } catch (error) {
+    next(error)
+  }
+})
+
+galleryRouter.put('/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = updateGallerySchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: '입력값이 올바르지 않습니다', details: parsed.error.issues })
+      return
+    }
+
+    const updated = await Gallery.findByIdAndUpdate(
+      req.params.id,
+      parsed.data,
+      { new: true, runValidators: true },
+    ).orFail()
+
+    res.json(updated)
   } catch (error) {
     next(error)
   }

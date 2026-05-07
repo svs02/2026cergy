@@ -38,13 +38,14 @@ import {
   isVideo,
   listGallery,
   reorderGallery,
+  updateGalleryImage,
   uploadGalleryMedia,
   type GalleryItem,
 } from '@/lib/api'
 import { Display } from '@/components/Display'
 import { PageHeader } from '@/components/PageHeader'
 import { Photo } from '@/components/Photo'
-import { CloseIcon, PlayIcon, TrashIcon } from '@/components/Icons'
+import { CloseIcon, PencilIcon, PlayIcon, TrashIcon } from '@/components/Icons'
 import { useAdmin } from '@/components/AdminContext'
 
 const CATEGORIES = [
@@ -199,6 +200,7 @@ export default function GalleryPage() {
   const [focus, setFocus] = useState<GalleryItem | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [sortMode, setSortMode] = useState(false)
+  const [editingItem, setEditingItem] = useState<GalleryItem | null>(null)
 
   const refresh = useCallback(async (cat: GalleryCategory) => {
     setLoading(true)
@@ -221,6 +223,10 @@ export default function GalleryPage() {
       setSortMode(false)
     }
   }, [isAdmin, sortMode])
+
+  const handleEdit = (item: GalleryItem) => {
+    setEditingItem(item)
+  }
 
   const handleDelete = async (item: GalleryItem) => {
     if (!window.confirm('이 항목을 삭제할까요?')) {
@@ -274,7 +280,7 @@ export default function GalleryPage() {
     items.forEach((item, index) => {
       if (item.featured) {
         if (pair.length > 0) {
-          rows.push(<PairRow key={`p-${index}`} items={pair} onTap={setFocus} isAdmin={isAdmin} onDelete={handleDelete} />)
+          rows.push(<PairRow key={`p-${index}`} items={pair} onTap={setFocus} isAdmin={isAdmin} onDelete={handleDelete} onEdit={handleEdit} />)
           pair = []
         }
         rows.push(
@@ -285,9 +291,22 @@ export default function GalleryPage() {
               <button
                 onClick={(event) => {
                   event.stopPropagation()
+                  handleEdit(item)
+                }}
+                style={editButtonStyle}
+                aria-label="수정"
+              >
+                <PencilIcon size={14} color="#fff" />
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                onClick={(event) => {
+                  event.stopPropagation()
                   void handleDelete(item)
                 }}
                 style={trashButtonStyle}
+                aria-label="삭제"
               >
                 <TrashIcon size={14} color="#fff" />
               </button>
@@ -297,13 +316,13 @@ export default function GalleryPage() {
       } else {
         pair.push(item)
         if (pair.length === 2) {
-          rows.push(<PairRow key={`p-${index}`} items={pair} onTap={setFocus} isAdmin={isAdmin} onDelete={handleDelete} />)
+          rows.push(<PairRow key={`p-${index}`} items={pair} onTap={setFocus} isAdmin={isAdmin} onDelete={handleDelete} onEdit={handleEdit} />)
           pair = []
         }
       }
     })
     if (pair.length > 0) {
-      rows.push(<PairRow key="last" items={pair} onTap={setFocus} isAdmin={isAdmin} onDelete={handleDelete} />)
+      rows.push(<PairRow key="last" items={pair} onTap={setFocus} isAdmin={isAdmin} onDelete={handleDelete} onEdit={handleEdit} />)
     }
     return rows
   }
@@ -478,6 +497,15 @@ export default function GalleryPage() {
           void refresh(category)
         }}
       />
+
+      <EditModal
+        item={editingItem}
+        onClose={() => setEditingItem(null)}
+        onSaved={() => {
+          setEditingItem(null)
+          void refresh(category)
+        }}
+      />
     </div>
   )
 }
@@ -495,6 +523,11 @@ const trashButtonStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   zIndex: 2,
+}
+
+const editButtonStyle: React.CSSProperties = {
+  ...trashButtonStyle,
+  right: 48,
 }
 
 const primaryActionButtonStyle: React.CSSProperties = {
@@ -537,9 +570,10 @@ interface PairRowProps {
   onTap: (item: GalleryItem) => void
   isAdmin: boolean
   onDelete: (item: GalleryItem) => void
+  onEdit: (item: GalleryItem) => void
 }
 
-function PairRow({ items, onTap, isAdmin, onDelete }: PairRowProps) {
+function PairRow({ items, onTap, isAdmin, onDelete, onEdit }: PairRowProps) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
       {items.map((item) => (
@@ -554,9 +588,22 @@ function PairRow({ items, onTap, isAdmin, onDelete }: PairRowProps) {
             <button
               onClick={(event) => {
                 event.stopPropagation()
+                onEdit(item)
+              }}
+              style={editButtonStyle}
+              aria-label="수정"
+            >
+              <PencilIcon size={14} color="#fff" />
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={(event) => {
+                event.stopPropagation()
                 onDelete(item)
               }}
               style={trashButtonStyle}
+              aria-label="삭제"
             >
               <TrashIcon size={14} color="#fff" />
             </button>
@@ -871,6 +918,97 @@ function UploadModal({ open, onClose, onUploaded }: UploadModalProps) {
           </Button>
           <Button onClick={() => void handleSubmit()} loading={uploading}>
             업로드
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+  )
+}
+
+interface EditModalProps {
+  item: GalleryItem | null
+  onClose: () => void
+  onSaved: () => void
+}
+
+function EditModal({ item, onClose, onSaved }: EditModalProps) {
+  const [category, setCategory] = useState<GalleryCategory>(GalleryCategory.SPACE)
+  const [caption, setCaption] = useState('')
+  const [featured, setFeatured] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!item) {
+      return
+    }
+    const matched = UPLOAD_CATEGORIES.find((cat) => cat === item.category)
+    setCategory(matched ?? GalleryCategory.SPACE)
+    setCaption(item.caption ?? '')
+    setFeatured(item.featured ?? false)
+  }, [item])
+
+  const handleSave = async () => {
+    if (!item) {
+      return
+    }
+    setSaving(true)
+    try {
+      await updateGalleryImage(item._id, {
+        category,
+        caption,
+        featured,
+      })
+      notifications.show({ title: '완료', message: '수정했습니다.', color: 'green' })
+      onSaved()
+    } catch (error) {
+      notifications.show({
+        title: '수정 실패',
+        message: error instanceof Error ? error.message : '알 수 없는 오류',
+        color: 'red',
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal
+      opened={item !== null}
+      onClose={onClose}
+      title="갤러리 수정"
+    >
+      <Stack>
+        <Select
+          label="카테고리"
+          data={UPLOAD_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
+          value={category}
+          onChange={(value) => {
+            if (!value) {
+              return
+            }
+            const matched = UPLOAD_CATEGORIES.find((cat) => cat === value)
+            if (matched) {
+              setCategory(matched)
+            }
+          }}
+        />
+        <TextInput
+          label="캡션 (선택)"
+          value={caption}
+          onChange={(event) => setCaption(event.currentTarget.value)}
+          placeholder="예: 겨울 발표회 · 2025"
+        />
+        <Checkbox
+          label="대표 사진 (풀폭 노출)"
+          checked={featured}
+          onChange={(event) => setFeatured(event.currentTarget.checked)}
+        />
+        <Group justify="flex-end">
+          <Button variant="subtle" onClick={onClose} disabled={saving}>
+            취소
+          </Button>
+          <Button onClick={() => void handleSave()} loading={saving}>
+            저장
           </Button>
         </Group>
       </Stack>
