@@ -107,7 +107,7 @@ function LessonCard({
       >
         <div
           style={{
-            fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+            fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
             fontStyle: 'italic',
             fontSize: 36,
             color: isGreen ? TOKENS.goldBright : TOKENS.gold,
@@ -117,7 +117,7 @@ function LessonCard({
         </div>
         <div
           style={{
-            fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+            fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
             fontStyle: 'italic',
             fontSize: 24,
             fontWeight: 500,
@@ -168,7 +168,7 @@ function LessonCard({
       >
         <div
           style={{
-            fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+            fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
             fontSize: 18,
             fontStyle: 'italic',
           }}

@@ -53,7 +53,7 @@ export function AdminLoginClient() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div
             style={{
-              fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+              fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
               fontStyle: 'italic',
               fontSize: 36,
               color: TOKENS.green,

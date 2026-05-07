@@ -322,7 +322,7 @@ export default async function HomePage() {
                 </div>
                 <div
                   style={{
-                    fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+                    fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
                     fontStyle: 'italic',
                     fontSize: 14,
                     color: TOKENS.green,
@@ -352,7 +352,7 @@ export default async function HomePage() {
                 <Photo label={item.label} height={240} tone={item.tone} />
                 <div
                   style={{
-                    fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+                    fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
                     fontStyle: 'italic',
                     fontSize: 14,
                     color: TOKENS.green,
@@ -635,7 +635,7 @@ export default async function HomePage() {
       >
         <div
           style={{
-            fontFamily: "var(--font-display), 'Cormorant Garamond', serif",
+            fontFamily: "var(--font-display), 'Cormorant Garamond', var(--font-display-kr), 'Nanum Myeongjo', serif",
             fontStyle: 'italic',
             fontSize: 26,
             color: '#fff',

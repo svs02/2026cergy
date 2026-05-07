@@ -4,7 +4,7 @@ import '@mantine/dates/styles.css'
 import './globals.css'
 
 import type { Metadata, Viewport } from 'next'
-import { Cormorant_Garamond, Inter, Noto_Sans_KR } from 'next/font/google'
+import { Cormorant_Garamond, Inter, Nanum_Myeongjo, Noto_Sans_KR } from 'next/font/google'
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { AppShell } from '@/components/AppShell'
@@ -15,6 +15,13 @@ const cormorant = Cormorant_Garamond({
   style: ['italic', 'normal'],
   display: 'swap',
   variable: '--font-display',
+})
+
+const nanumMyeongjo = Nanum_Myeongjo({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  display: 'swap',
+  variable: '--font-display-kr',
 })
 
 const inter = Inter({
@@ -52,7 +59,7 @@ export default function RootLayout({
     <html
       lang="ko"
       {...mantineHtmlProps}
-      className={`${cormorant.variable} ${inter.variable} ${notoSansKr.variable}`}
+      className={`${cormorant.variable} ${nanumMyeongjo.variable} ${inter.variable} ${notoSansKr.variable}`}
     >
       <head>
         <ColorSchemeScript />
