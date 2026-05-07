@@ -35,7 +35,7 @@ async function fetchHomeData(): Promise<{
   const notices = noticesResult.status === 'fulfilled' ? noticesResult.value.items : []
   const galleryAll = galleryResult.status === 'fulfilled' ? galleryResult.value.items : []
   const featured = galleryAll.filter((item) => item.featured)
-  const gallery = (featured.length > 0 ? featured : galleryAll).slice(0, 4)
+  const gallery = (featured.length > 0 ? featured : galleryAll).slice(0, 10)
   const instructors = instructorsResult.status === 'fulfilled' ? instructorsResult.value.items : []
   return { notices, gallery, instructors }
 }
