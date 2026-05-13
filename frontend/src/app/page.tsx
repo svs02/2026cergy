@@ -666,7 +666,7 @@ export default async function HomePage() {
           <br />
           인천 미추홀구 숙골로 104 · 0507-1479-3133
           <br />
-          사업자등록번호 117-98-28337
+          인천남부교육지원청 등록번호 제 3509호
         </div>
         <div
           style={{

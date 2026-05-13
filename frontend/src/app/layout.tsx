@@ -8,6 +8,10 @@ import { Cormorant_Garamond, Inter, Nanum_Myeongjo, Noto_Sans_KR } from 'next/fo
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { AppShell } from '@/components/AppShell'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { BUSINESS } from '@/constants/business'
+import { buildMusicSchoolSchema, buildWebSiteSchema } from '@/lib/schema'
+import { SITE_URL } from '@/lib/siteUrl'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -39,8 +43,40 @@ const notoSansKr = Noto_Sans_KR({
 })
 
 export const metadata: Metadata = {
-  title: 'Cergy Music Academy',
-  description: '음악 학원 — 편안한 분위기에서, 음악을 통해 성장합니다.',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${BUSINESS.name} | ${BUSINESS.nameKo}`,
+    template: `%s | ${BUSINESS.name}`,
+  },
+  description: BUSINESS.description,
+  keywords: [...BUSINESS.keywords],
+  applicationName: BUSINESS.name,
+  authors: [{ name: BUSINESS.name }],
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    locale: 'ko_KR',
+    siteName: BUSINESS.name,
+    url: SITE_URL,
+    title: `${BUSINESS.name} | ${BUSINESS.nameKo}`,
+    description: BUSINESS.description,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${BUSINESS.name} | ${BUSINESS.nameKo}`,
+    description: BUSINESS.description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
   verification: {
     other: {
       'naver-site-verification': 'd197da97fdbea59a21f08a0e46b5ac7aeb398f9c',
@@ -70,6 +106,7 @@ export default function RootLayout({
         <ColorSchemeScript />
       </head>
       <body>
+        <JsonLd data={[buildMusicSchoolSchema(), buildWebSiteSchema()]} />
         <MantineProvider>
           <Notifications />
           <AppShell>{children}</AppShell>
