@@ -41,6 +41,11 @@ const notoSansKr = Noto_Sans_KR({
 export const metadata: Metadata = {
   title: 'Cergy Music Academy',
   description: '음악 학원 — 편안한 분위기에서, 음악을 통해 성장합니다.',
+  verification: {
+    other: {
+      'naver-site-verification': 'd197da97fdbea59a21f08a0e46b5ac7aeb398f9c',
+    },
+  },
 }
 
 export const viewport: Viewport = {

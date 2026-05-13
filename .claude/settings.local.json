@@ -55,7 +55,11 @@
       "Bash(grep -r \"\\\\$2b\\\\$\" /Users/luke/Desktop/PP/2026cergy --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.example\")",
       "Bash(grep -r \"2b\\\\$10\" /Users/luke/Desktop/PP/2026cergy --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.local*\")",
       "Bash(flyctl secrets *)",
-      "Bash(sips -g pixelWidth -g pixelHeight /Users/luke/Desktop/PP/2026cergy/frontend/public/image/153598104_910771036327156_2048521052833619321_n.jpg)"
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/luke/Desktop/PP/2026cergy/frontend/public/image/153598104_910771036327156_2048521052833619321_n.jpg)",
+      "Bash(awk *)",
+      "Bash(grep -E \"\\\\.DS_Store$\")",
+      "Bash(grep -E \"\\\\.env\\\\.local$|\\\\.DS_Store$\")",
+      "Bash(brew install *)"
     ]
   }
 }
